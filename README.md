@@ -27,6 +27,8 @@ A **workflow** is a directed graph made of three things:
 
 You define the graph once (usually in an artisan command or a setup controller). Then you trigger it — the engine walks the graph, runs each node, and logs every step.
 
+> Both fluent (`$workflow->addNode(...)`) and Facade (`Workflow::addNode(...)`) APIs are supported. Examples use the fluent style.
+
 ## Quick Start
 
 The simplest real scenario: when a user registers, send a welcome email.
@@ -36,7 +38,7 @@ The simplest real scenario: when a user registers, send a welcome email.
 ```php
 // app/Console/Commands/SetupWelcomeWorkflow.php
 
-use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
+use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 use Illuminate\Console\Command;
 
 class SetupWelcomeWorkflow extends Command
@@ -48,19 +50,19 @@ class SetupWelcomeWorkflow extends Command
     {
         $workflow = Workflow::create(['name' => 'Welcome Email']);
 
-        $trigger = Workflow::addNode($workflow, 'model_event', [
+        $trigger = $workflow->addNode('User Created', 'model_event', [
             'model'  => 'App\\Models\\User',
             'events' => ['created'],
-        ], name: 'User Created');
+        ]);
 
-        $email = Workflow::addNode($workflow, 'send_mail', [
+        $email = $workflow->addNode('Send Welcome', 'send_mail', [
             'to'      => '{{ item.email }}',
             'subject' => 'Welcome, {{ item.name }}!',
             'body'    => 'Thanks for signing up.',
-        ], name: 'Send Welcome');
+        ]);
 
-        Workflow::connect($trigger->id, $email->id);
-        Workflow::activate($workflow);
+        $trigger->connect($email);
+        $workflow->activate();
 
         $this->info("Welcome Email workflow created (ID: {$workflow->id})");
     }
@@ -87,24 +89,24 @@ public function boot(): void
 Add an `if_condition` node to branch based on data. This workflow sends a VIP notice for orders over $100, or just marks them processed:
 
 ```php
-$trigger   = Workflow::addNode($workflow, 'manual', name: 'New Order');
-$condition = Workflow::addNode($workflow, 'if_condition', [
+$trigger   = $workflow->addNode('New Order', 'manual');
+$condition = $workflow->addNode('High Value?', 'if_condition', [
     'field'    => 'amount',
     'operator' => 'greater_than',
     'value'    => 100,
-], name: 'High Value?');
-$notify    = Workflow::addNode($workflow, 'send_mail', [
+]);
+$notify    = $workflow->addNode('Notify VIP Team', 'send_mail', [
     'to'      => 'vip-team@company.com',
     'subject' => 'High value order: ${{ item.amount }}',
     'body'    => 'Order #{{ item.id }} needs review.',
-], name: 'Notify VIP Team');
-$markDone  = Workflow::addNode($workflow, 'set_fields', [
+]);
+$markDone  = $workflow->addNode('Mark Processed', 'set_fields', [
     'fields' => ['status' => 'processed'],
-], name: 'Mark Processed');
+]);
 
-Workflow::connect($trigger->id, $condition->id);
-Workflow::connect($condition->id, $notify->id, sourcePort: 'true');
-Workflow::connect($condition->id, $markDone->id, sourcePort: 'false');
+$trigger->connect($condition);
+$condition->connect($notify, sourcePort: 'true');
+$condition->connect($markDone, sourcePort: 'false');
 ```
 
 `sourcePort` is how branching works. Condition nodes output to named ports (`true`/`false`). Switch nodes output to `case_*` ports. You connect edges to whichever port you want.
@@ -112,11 +114,10 @@ Workflow::connect($condition->id, $markDone->id, sourcePort: 'false');
 Then trigger it from anywhere:
 
 ```php
-use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
-use Aftandilmmd\WorkflowAutomation\Models\Workflow as WorkflowModel;
+use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 
-$workflow = WorkflowModel::where('name', 'Order Processing')->first();
-$run = Workflow::run($workflow, [['id' => 42, 'amount' => 250, 'email' => 'customer@test.com']]);
+$workflow = Workflow::where('name', 'Order Processing')->first();
+$run = $workflow->start([['id' => 42, 'amount' => 250, 'email' => 'customer@test.com']]);
 // $run->status === 'completed'
 ```
 
@@ -124,20 +125,20 @@ $run = Workflow::run($workflow, [['id' => 42, 'amount' => 250, 'email' => 'custo
 
 There are 4 ways to start a workflow:
 
-**Manual** — Call `Workflow::run()` from your code or the API.
+**Manual** — Call `$workflow->start()` from your code or the API.
 
 ```php
-Workflow::addNode($workflow, 'manual', name: 'Start');
-// Trigger: Workflow::run($workflow, [['key' => 'value']]);
+$workflow->addNode('Start', 'manual');
+// Trigger: $workflow->start([['key' => 'value']]);
 ```
 
 **Model Event** — Fires when an Eloquent model is created, updated, or deleted.
 
 ```php
-Workflow::addNode($workflow, 'model_event', [
+$workflow->addNode('Order Created', 'model_event', [
     'model'  => 'App\\Models\\Order',
     'events' => ['created'],
-], name: 'Order Created');
+]);
 // Trigger: automatic — Order::create([...]) fires the workflow
 // Requires: ModelEventListener::register() in AppServiceProvider
 ```
@@ -145,10 +146,10 @@ Workflow::addNode($workflow, 'model_event', [
 **Webhook** — Generates a unique URL that accepts POST requests.
 
 ```php
-$node = Workflow::addNode($workflow, 'webhook', [
+$node = $workflow->addNode('Stripe Hook', 'webhook', [
     'method'    => 'POST',
     'auth_type' => 'bearer',
-], name: 'Stripe Hook');
+]);
 // URL: POST /workflow-webhook/{uuid} (uuid is in $node->config['path'])
 // Trigger: external service sends HTTP request
 ```
@@ -156,10 +157,10 @@ $node = Workflow::addNode($workflow, 'webhook', [
 **Schedule** — Runs on a cron schedule.
 
 ```php
-Workflow::addNode($workflow, 'schedule', [
+$workflow->addNode('Morning Report', 'schedule', [
     'interval_type' => 'custom_cron',
     'cron'          => '0 8 * * *', // Daily at 8 AM
-], name: 'Morning Report');
+]);
 // Trigger: automatic — requires Schedule::command('workflow:schedule-run')->everyMinute()
 ```
 
@@ -242,17 +243,17 @@ Available functions: `upper`, `lower`, `trim`, `length`, `substr`, `replace`, `c
 Expand an array into individual items, process each one:
 
 ```php
-$loop = Workflow::addNode($workflow, 'loop', [
+$loop = $workflow->addNode('Each Item', 'loop', [
     'source_field' => 'order_items',
-], name: 'Each Item');
+]);
 
-$updateStock = Workflow::addNode($workflow, 'http_request', [
+$updateStock = $workflow->addNode('Update Stock', 'http_request', [
     'url'    => 'https://inventory.api/stock',
     'method' => 'POST',
     'body'   => ['sku' => '{{ item._loop_item.sku }}', 'qty' => '{{ item._loop_item.qty }}'],
-], name: 'Update Stock');
+]);
 
-Workflow::connect($loop->id, $updateStock->id, sourcePort: 'loop_item');
+$loop->connect($updateStock, sourcePort: 'loop_item');
 ```
 
 ### Wait for human approval
@@ -260,20 +261,22 @@ Workflow::connect($loop->id, $updateStock->id, sourcePort: 'loop_item');
 Pause the workflow until someone approves or rejects:
 
 ```php
-$wait = Workflow::addNode($workflow, 'wait_resume', [
+$wait = $workflow->addNode('Await Approval', 'wait_resume', [
     'timeout_seconds' => 259200, // 3 days
-], name: 'Await Approval');
+]);
 
-$approved = Workflow::addNode($workflow, 'if_condition', [
+$approved = $workflow->addNode('Approved?', 'if_condition', [
     'field' => 'approved', 'operator' => 'equals', 'value' => true,
-], name: 'Approved?');
+]);
 
-Workflow::connect($wait->id, $approved->id, sourcePort: 'resume');
+$wait->connect($approved, sourcePort: 'resume');
 ```
 
 The workflow pauses (`$run->status === 'waiting'`). Resume it later:
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
+
 Workflow::resume($runId, $resumeToken, ['approved' => true]);
 ```
 
@@ -282,6 +285,8 @@ Or via API: `POST /workflow-engine/runs/{id}/resume` with `{"resume_token": "...
 ### Retry and replay failed runs
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
+
 // Replay: re-run a completed or failed workflow with its original payload
 Workflow::replay($runId);
 

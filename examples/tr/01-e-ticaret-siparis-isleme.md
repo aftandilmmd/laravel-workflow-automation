@@ -19,7 +19,7 @@ Bir artisan komutu oluşturup `php artisan workflow:setup-orders` ile bir kez ç
 ```php
 // app/Console/Commands/SetupOrderWorkflow.php
 
-use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
+use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 use Illuminate\Console\Command;
 
 class SetupOrderWorkflow extends Command
@@ -31,41 +31,41 @@ class SetupOrderWorkflow extends Command
     {
         $workflow = Workflow::create(['name' => 'Order Processing']);
 
-        $trigger = Workflow::addNode($workflow, 'manual', name: 'New Order');
+        $trigger = $workflow->addNode('New Order', 'manual');
 
-        $checkAmount = Workflow::addNode($workflow, 'if_condition', [
+        $checkAmount = $workflow->addNode('High Value?', 'if_condition', [
             'field'    => 'total',
             'operator' => 'greater_than',
             'value'    => 500,
-        ], name: 'High Value?');
+        ]);
 
-        $notifyVip = Workflow::addNode($workflow, 'send_mail', [
+        $notifyVip = $workflow->addNode('Notify VIP Team', 'send_mail', [
             'to'      => 'vip-team@store.com',
             'subject' => 'VIP Order #{{ item.order_id }} — ${{ item.total }}',
             'body'    => '{{ item.customer_name }} placed a ${{ item.total }} order.',
-        ], name: 'Notify VIP Team');
+        ]);
 
-        $loop = Workflow::addNode($workflow, 'loop', [
+        $loop = $workflow->addNode('Each Item', 'loop', [
             'source_field' => 'items',
-        ], name: 'Each Item');
+        ]);
 
-        $updateStock = Workflow::addNode($workflow, 'http_request', [
+        $updateStock = $workflow->addNode('Update Stock', 'http_request', [
             'url'    => 'https://inventory.api/stock/decrement',
             'method' => 'POST',
             'body'   => [
                 'sku'      => '{{ item._loop_item.sku }}',
                 'quantity' => '{{ item._loop_item.quantity }}',
             ],
-        ], name: 'Update Stock');
+        ]);
 
         // Edge'ler
-        Workflow::connect($trigger->id, $checkAmount->id);
-        Workflow::connect($checkAmount->id, $notifyVip->id, sourcePort: 'true');
-        Workflow::connect($notifyVip->id, $loop->id);
-        Workflow::connect($checkAmount->id, $loop->id, sourcePort: 'false');
-        Workflow::connect($loop->id, $updateStock->id, sourcePort: 'loop_item');
+        $trigger->connect($checkAmount);
+        $checkAmount->connect($notifyVip, sourcePort: 'true');
+        $notifyVip->connect($loop);
+        $checkAmount->connect($loop, sourcePort: 'false');
+        $loop->connect($updateStock, sourcePort: 'loop_item');
 
-        Workflow::activate($workflow);
+        $workflow->activate();
 
         $this->info("Order Processing workflow created (ID: {$workflow->id})");
     }
@@ -79,8 +79,7 @@ Her iki dal da aynı `$loop` node'una birleşir — VIP siparişler önce e-post
 ```php
 // app/Http/Controllers/OrderController.php
 
-use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
-use Aftandilmmd\WorkflowAutomation\Models\Workflow as WorkflowModel;
+use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 
 class OrderController extends Controller
 {
@@ -88,9 +87,9 @@ class OrderController extends Controller
     {
         $order = Order::create($request->validated());
 
-        $workflow = WorkflowModel::where('name', 'Order Processing')->firstOrFail();
+        $workflow = Workflow::where('name', 'Order Processing')->firstOrFail();
 
-        Workflow::run($workflow, [[
+        $workflow->start([[
             'order_id'      => $order->id,
             'customer_name' => $order->customer_name,
             'total'         => $order->total,

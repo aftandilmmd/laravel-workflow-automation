@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static \Aftandilmmd\WorkflowAutomation\Models\Workflow deactivate(int|\Aftandilmmd\WorkflowAutomation\Models\Workflow $workflow)
  * @method static array validate(int|\Aftandilmmd\WorkflowAutomation\Models\Workflow $workflow)
  * @method static \Aftandilmmd\WorkflowAutomation\Models\WorkflowNode addNode(int|\Aftandilmmd\WorkflowAutomation\Models\Workflow $workflow, string $nodeKey, array $config = [], ?string $name = null)
- * @method static \Aftandilmmd\WorkflowAutomation\Models\WorkflowEdge connect(int $sourceNodeId, int $targetNodeId, string $sourcePort = 'main', string $targetPort = 'main')
+ * @method static \Aftandilmmd\WorkflowAutomation\Models\WorkflowEdge connect(int|\Aftandilmmd\WorkflowAutomation\Models\WorkflowNode $source, int|\Aftandilmmd\WorkflowAutomation\Models\WorkflowNode $target, string $sourcePort = 'main', string $targetPort = 'main')
  * @method static void removeNode(int $nodeId)
  * @method static void removeEdge(int $edgeId)
  *

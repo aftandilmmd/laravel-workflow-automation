@@ -20,7 +20,7 @@ Create an artisan command and run it once with `php artisan workflow:setup-strip
 ```php
 // app/Console/Commands/SetupStripeWorkflow.php
 
-use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
+use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 use Illuminate\Console\Command;
 
 class SetupStripeWorkflow extends Command
@@ -32,89 +32,89 @@ class SetupStripeWorkflow extends Command
     {
         $workflow = Workflow::create(['name' => 'Stripe Webhooks']);
 
-        $trigger = Workflow::addNode($workflow, 'webhook', [
+        $trigger = $workflow->addNode('Stripe Webhook', 'webhook', [
             'method'    => 'POST',
             'auth_type' => 'header_key',
-        ], name: 'Stripe Webhook');
+        ]);
 
-        $switchEvent = Workflow::addNode($workflow, 'switch', [
+        $switchEvent = $workflow->addNode('Route by Event', 'switch', [
             'field' => 'type',
             'cases' => [
                 ['port' => 'case_succeeded', 'operator' => 'equals', 'value' => 'payment_intent.succeeded'],
                 ['port' => 'case_failed',    'operator' => 'equals', 'value' => 'payment_intent.payment_failed'],
                 ['port' => 'case_refund',    'operator' => 'equals', 'value' => 'charge.refunded'],
             ],
-        ], name: 'Route by Event');
+        ]);
 
         // ── Payment succeeded ─────────────────────────────────
 
-        $markPaid = Workflow::addNode($workflow, 'update_model', [
+        $markPaid = $workflow->addNode('Mark Paid', 'update_model', [
             'model'      => 'App\\Models\\Order',
             'find_by'    => 'stripe_payment_intent',
             'find_value' => '{{ item.data.object.id }}',
             'fields'     => ['status' => 'paid', 'paid_at' => '{{ now() }}'],
-        ], name: 'Mark Paid');
+        ]);
 
-        $sendReceipt = Workflow::addNode($workflow, 'send_mail', [
+        $sendReceipt = $workflow->addNode('Send Receipt', 'send_mail', [
             'to'      => '{{ item.data.object.receipt_email }}',
             'subject' => 'Payment Confirmed — Order #{{ item.data.object.metadata.order_id }}',
             'body'    => 'Your payment of ${{ item.data.object.amount / 100 }} has been confirmed.',
-        ], name: 'Send Receipt');
+        ]);
 
         // ── Payment failed ────────────────────────────────────
 
-        $markFailed = Workflow::addNode($workflow, 'update_model', [
+        $markFailed = $workflow->addNode('Mark Failed', 'update_model', [
             'model'      => 'App\\Models\\Order',
             'find_by'    => 'stripe_payment_intent',
             'find_value' => '{{ item.data.object.id }}',
             'fields'     => ['status' => 'payment_failed'],
-        ], name: 'Mark Failed');
+        ]);
 
-        $sendRetryNotice = Workflow::addNode($workflow, 'send_mail', [
+        $sendRetryNotice = $workflow->addNode('Retry Notice', 'send_mail', [
             'to'      => '{{ item.data.object.receipt_email }}',
             'subject' => 'Payment Failed — Action Required',
             'body'    => 'Your payment could not be processed. We will retry in 1 hour.',
-        ], name: 'Retry Notice');
+        ]);
 
-        $delay = Workflow::addNode($workflow, 'delay', [
+        $delay = $workflow->addNode('Wait 1 Hour', 'delay', [
             'delay_seconds' => 3600, // 1 hour
-        ], name: 'Wait 1 Hour');
+        ]);
 
-        $retryCharge = Workflow::addNode($workflow, 'http_request', [
+        $retryCharge = $workflow->addNode('Retry Charge', 'http_request', [
             'url'    => 'https://api.stripe.com/v1/payment_intents/{{ item.data.object.id }}/confirm',
             'method' => 'POST',
-        ], name: 'Retry Charge');
+        ]);
 
         // ── Refund ────────────────────────────────────────────
 
-        $markRefunded = Workflow::addNode($workflow, 'update_model', [
+        $markRefunded = $workflow->addNode('Mark Refunded', 'update_model', [
             'model'      => 'App\\Models\\Order',
             'find_by'    => 'stripe_charge_id',
             'find_value' => '{{ item.data.object.id }}',
             'fields'     => ['status' => 'refunded', 'refunded_at' => '{{ now() }}'],
-        ], name: 'Mark Refunded');
+        ]);
 
-        $sendRefundEmail = Workflow::addNode($workflow, 'send_mail', [
+        $sendRefundEmail = $workflow->addNode('Refund Confirmation', 'send_mail', [
             'to'      => '{{ item.data.object.receipt_email }}',
             'subject' => 'Refund Processed',
             'body'    => 'Your refund of ${{ item.data.object.amount_refunded / 100 }} has been processed.',
-        ], name: 'Refund Confirmation');
+        ]);
 
         // Edges
-        Workflow::connect($trigger->id, $switchEvent->id);
+        $trigger->connect($switchEvent);
 
-        Workflow::connect($switchEvent->id, $markPaid->id, sourcePort: 'case_succeeded');
-        Workflow::connect($markPaid->id, $sendReceipt->id);
+        $switchEvent->connect($markPaid, sourcePort: 'case_succeeded');
+        $markPaid->connect($sendReceipt);
 
-        Workflow::connect($switchEvent->id, $markFailed->id, sourcePort: 'case_failed');
-        Workflow::connect($markFailed->id, $sendRetryNotice->id);
-        Workflow::connect($sendRetryNotice->id, $delay->id);
-        Workflow::connect($delay->id, $retryCharge->id);
+        $switchEvent->connect($markFailed, sourcePort: 'case_failed');
+        $markFailed->connect($sendRetryNotice);
+        $sendRetryNotice->connect($delay);
+        $delay->connect($retryCharge);
 
-        Workflow::connect($switchEvent->id, $markRefunded->id, sourcePort: 'case_refund');
-        Workflow::connect($markRefunded->id, $sendRefundEmail->id);
+        $switchEvent->connect($markRefunded, sourcePort: 'case_refund');
+        $markRefunded->connect($sendRefundEmail);
 
-        Workflow::activate($workflow);
+        $workflow->activate();
 
         $this->info("Stripe Webhooks workflow created (ID: {$workflow->id})");
     }

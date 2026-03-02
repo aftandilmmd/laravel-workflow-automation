@@ -3,6 +3,7 @@
 namespace Aftandilmmd\WorkflowAutomation\Models;
 
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
+use Aftandilmmd\WorkflowAutomation\Services\WorkflowService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -56,5 +57,52 @@ class WorkflowNode extends Model
             config('workflow-automation.models.node_run', WorkflowNodeRun::class),
             'node_id',
         );
+    }
+
+    // ── Fluent API ──────────────────────────────────────────────
+
+    public function addNode(string $name, string $nodeKey, array $config = []): self
+    {
+        return $this->service()->addNode($this->workflow_id, $nodeKey, $config, $name);
+    }
+
+    /**
+     * Connect this node to a target node. Returns the TARGET node for chaining.
+     */
+    public function connect(
+        int|self $target,
+        string $sourcePort = 'main',
+        string $targetPort = 'main',
+    ): self {
+        $targetNode = $target instanceof self ? $target : self::findOrFail($target);
+
+        $this->service()->connect($this, $targetNode, $sourcePort, $targetPort);
+
+        return $targetNode;
+    }
+
+    public function activate(): Workflow
+    {
+        return $this->workflow->activate();
+    }
+
+    public function deactivate(): Workflow
+    {
+        return $this->workflow->deactivate();
+    }
+
+    public function run(array $payload = []): WorkflowRun
+    {
+        return $this->workflow->start($payload);
+    }
+
+    public function validateGraph(): array
+    {
+        return $this->workflow->validateGraph();
+    }
+
+    private function service(): WorkflowService
+    {
+        return app(WorkflowService::class);
     }
 }

@@ -17,7 +17,7 @@ Bir artisan komutu oluşturup `php artisan workflow:setup-sales-pipeline` ile bi
 ```php
 // app/Console/Commands/SetupSalesPipeline.php
 
-use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
+use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 use Illuminate\Console\Command;
 
 class SetupSalesPipeline extends Command
@@ -29,48 +29,48 @@ class SetupSalesPipeline extends Command
     {
         $workflow = Workflow::create(['name' => 'Sales Pipeline']);
 
-        $trigger = Workflow::addNode($workflow, 'manual', name: 'Start');
+        $trigger = $workflow->addNode('Start', 'manual');
 
-        $fetchData = Workflow::addNode($workflow, 'http_request', [
+        $fetchData = $workflow->addNode('Fetch Sales', 'http_request', [
             'url'    => 'https://sales-api.example.com/transactions?date={{ payload.date }}',
             'method' => 'GET',
-        ], name: 'Fetch Sales');
+        ]);
 
-        $filterCompleted = Workflow::addNode($workflow, 'filter', [
+        $filterCompleted = $workflow->addNode('Completed Only', 'filter', [
             'conditions' => [
                 ['field' => 'status', 'operator' => 'equals', 'value' => 'completed'],
                 ['field' => 'amount', 'operator' => 'greater_than', 'value' => 0],
             ],
             'logic' => 'and',
-        ], name: 'Completed Only');
+        ]);
 
-        $calcRevenue = Workflow::addNode($workflow, 'code', [
+        $calcRevenue = $workflow->addNode('Net Revenue', 'code', [
             'mode'       => 'transform',
             'expression' => '{{ item.amount * (1 - item.discount / 100) }}',
-        ], name: 'Net Revenue');
+        ]);
 
-        $aggregate = Workflow::addNode($workflow, 'aggregate', [
+        $aggregate = $workflow->addNode('By Region', 'aggregate', [
             'group_by'   => 'region',
             'operations' => [
                 ['field' => '_result', 'function' => 'sum',   'alias' => 'total_revenue'],
                 ['field' => '_result', 'function' => 'count', 'alias' => 'transaction_count'],
             ],
-        ], name: 'By Region');
+        ]);
 
-        $pushReport = Workflow::addNode($workflow, 'http_request', [
+        $pushReport = $workflow->addNode('Push Report', 'http_request', [
             'url'    => 'https://reports.example.com/ingest',
             'method' => 'POST',
             'body'   => ['report_type' => 'daily_sales', 'date' => '{{ payload.date }}'],
-        ], name: 'Push Report');
+        ]);
 
         // Edge'ler — düz bir pipeline
-        Workflow::connect($trigger->id, $fetchData->id);
-        Workflow::connect($fetchData->id, $filterCompleted->id);
-        Workflow::connect($filterCompleted->id, $calcRevenue->id);
-        Workflow::connect($calcRevenue->id, $aggregate->id);
-        Workflow::connect($aggregate->id, $pushReport->id);
+        $trigger->connect($fetchData);
+        $fetchData->connect($filterCompleted);
+        $filterCompleted->connect($calcRevenue);
+        $calcRevenue->connect($aggregate);
+        $aggregate->connect($pushReport);
 
-        Workflow::activate($workflow);
+        $workflow->activate();
 
         $this->info("Sales Pipeline workflow created (ID: {$workflow->id})");
     }
@@ -82,8 +82,8 @@ class SetupSalesPipeline extends Command
 Controller, başka bir komut veya herhangi bir yerden:
 
 ```php
-$workflow = WorkflowModel::where('name', 'Sales Pipeline')->firstOrFail();
-Workflow::run($workflow, [['date' => '2025-03-01']]);
+$workflow = Workflow::where('name', 'Sales Pipeline')->firstOrFail();
+$workflow->start([['date' => '2025-03-01']]);
 ```
 
 Veya günlük çalışacak şekilde zamanlayın:

@@ -27,6 +27,8 @@ Bir **workflow** üç şeyden oluşan yönlü bir graftır:
 
 Grafı bir kez tanımlarsınız (genellikle bir artisan komutu veya setup controller'ında). Sonra tetiklersiniz — motor grafı gezir, her node'u çalıştırır ve her adımı loglar.
 
+> Hem fluent (`$workflow->addNode(...)`) hem de Facade (`Workflow::addNode(...)`) API'leri desteklenir. Örnekler fluent stili kullanır.
+
 ## Hızlı Başlangıç
 
 En basit gerçek senaryo: kullanıcı kayıt olunca hoş geldin e-postası gönder.
@@ -36,7 +38,7 @@ En basit gerçek senaryo: kullanıcı kayıt olunca hoş geldin e-postası gönd
 ```php
 // app/Console/Commands/SetupWelcomeWorkflow.php
 
-use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
+use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 use Illuminate\Console\Command;
 
 class SetupWelcomeWorkflow extends Command
@@ -48,19 +50,19 @@ class SetupWelcomeWorkflow extends Command
     {
         $workflow = Workflow::create(['name' => 'Welcome Email']);
 
-        $trigger = Workflow::addNode($workflow, 'model_event', [
+        $trigger = $workflow->addNode('User Created', 'model_event', [
             'model'  => 'App\\Models\\User',
             'events' => ['created'],
-        ], name: 'User Created');
+        ]);
 
-        $email = Workflow::addNode($workflow, 'send_mail', [
+        $email = $workflow->addNode('Send Welcome', 'send_mail', [
             'to'      => '{{ item.email }}',
             'subject' => 'Welcome, {{ item.name }}!',
             'body'    => 'Thanks for signing up.',
-        ], name: 'Send Welcome');
+        ]);
 
-        Workflow::connect($trigger->id, $email->id);
-        Workflow::activate($workflow);
+        $trigger->connect($email);
+        $workflow->activate();
 
         $this->info("Welcome Email workflow created (ID: {$workflow->id})");
     }
@@ -80,31 +82,31 @@ public function boot(): void
 }
 ```
 
-**Bu kadar.** Her `User::create()` çağrısı artık workflow'u otomatik tetikler. Manuel `Workflow::run()` gerekmez.
+**Bu kadar.** Her `User::create()` çağrısı artık workflow'u otomatik tetikler. Manuel tetikleme gerekmez.
 
 ## Mantık Ekleme
 
 Veriye göre dallanma yapmak için `if_condition` node'u ekleyin. Bu workflow, 100$'ın üzerindeki siparişler için VIP bildirimi gönderir, altındakileri işlenmiş olarak işaretler:
 
 ```php
-$trigger   = Workflow::addNode($workflow, 'manual', name: 'New Order');
-$condition = Workflow::addNode($workflow, 'if_condition', [
+$trigger   = $workflow->addNode('New Order', 'manual');
+$condition = $workflow->addNode('High Value?', 'if_condition', [
     'field'    => 'amount',
     'operator' => 'greater_than',
     'value'    => 100,
-], name: 'High Value?');
-$notify    = Workflow::addNode($workflow, 'send_mail', [
+]);
+$notify    = $workflow->addNode('Notify VIP Team', 'send_mail', [
     'to'      => 'vip-team@company.com',
     'subject' => 'High value order: ${{ item.amount }}',
     'body'    => 'Order #{{ item.id }} needs review.',
-], name: 'Notify VIP Team');
-$markDone  = Workflow::addNode($workflow, 'set_fields', [
+]);
+$markDone  = $workflow->addNode('Mark Processed', 'set_fields', [
     'fields' => ['status' => 'processed'],
-], name: 'Mark Processed');
+]);
 
-Workflow::connect($trigger->id, $condition->id);
-Workflow::connect($condition->id, $notify->id, sourcePort: 'true');
-Workflow::connect($condition->id, $markDone->id, sourcePort: 'false');
+$trigger->connect($condition);
+$condition->connect($notify, sourcePort: 'true');
+$condition->connect($markDone, sourcePort: 'false');
 ```
 
 `sourcePort` dallanmanın çalışma şeklidir. Koşul node'ları isimli portlara çıkış verir (`true`/`false`). Switch node'ları `case_*` portlarına çıkış verir. Edge'leri istediğiniz porta bağlarsınız.
@@ -112,11 +114,10 @@ Workflow::connect($condition->id, $markDone->id, sourcePort: 'false');
 Sonra istediğiniz yerden tetikleyin:
 
 ```php
-use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
-use Aftandilmmd\WorkflowAutomation\Models\Workflow as WorkflowModel;
+use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 
-$workflow = WorkflowModel::where('name', 'Order Processing')->first();
-$run = Workflow::run($workflow, [['id' => 42, 'amount' => 250, 'email' => 'customer@test.com']]);
+$workflow = Workflow::where('name', 'Order Processing')->first();
+$run = $workflow->start([['id' => 42, 'amount' => 250, 'email' => 'customer@test.com']]);
 // $run->status === 'completed'
 ```
 
@@ -124,20 +125,20 @@ $run = Workflow::run($workflow, [['id' => 42, 'amount' => 250, 'email' => 'custo
 
 Bir workflow'u başlatmanın 4 yolu var:
 
-**Manuel** — Kodunuzdan veya API'den `Workflow::run()` çağırın.
+**Manuel** — Kodunuzdan veya API'den `$workflow->start()` çağırın.
 
 ```php
-Workflow::addNode($workflow, 'manual', name: 'Start');
-// Tetikleme: Workflow::run($workflow, [['key' => 'value']]);
+$workflow->addNode('Start', 'manual');
+// Tetikleme: $workflow->start([['key' => 'value']]);
 ```
 
 **Model Event** — Bir Eloquent modeli oluşturulduğunda, güncellendiğinde veya silindiğinde tetiklenir.
 
 ```php
-Workflow::addNode($workflow, 'model_event', [
+$workflow->addNode('Order Created', 'model_event', [
     'model'  => 'App\\Models\\Order',
     'events' => ['created'],
-], name: 'Order Created');
+]);
 // Tetikleme: otomatik — Order::create([...]) workflow'u başlatır
 // Gereksinim: AppServiceProvider'da ModelEventListener::register()
 ```
@@ -145,10 +146,10 @@ Workflow::addNode($workflow, 'model_event', [
 **Webhook** — POST isteklerini kabul eden benzersiz bir URL oluşturur.
 
 ```php
-$node = Workflow::addNode($workflow, 'webhook', [
+$node = $workflow->addNode('Stripe Hook', 'webhook', [
     'method'    => 'POST',
     'auth_type' => 'bearer',
-], name: 'Stripe Hook');
+]);
 // URL: POST /workflow-webhook/{uuid} (uuid: $node->config['path'])
 // Tetikleme: dış servis HTTP isteği gönderir
 ```
@@ -156,10 +157,10 @@ $node = Workflow::addNode($workflow, 'webhook', [
 **Zamanlama** — Cron zamanlamasına göre çalışır.
 
 ```php
-Workflow::addNode($workflow, 'schedule', [
+$workflow->addNode('Morning Report', 'schedule', [
     'interval_type' => 'custom_cron',
     'cron'          => '0 8 * * *', // Her gün saat 8'de
-], name: 'Morning Report');
+]);
 // Tetikleme: otomatik — Schedule::command('workflow:schedule-run')->everyMinute() gerektirir
 ```
 
@@ -242,17 +243,17 @@ Kullanılabilir fonksiyonlar: `upper`, `lower`, `trim`, `length`, `substr`, `rep
 Bir diziyi tekil öğelere genişlet, her birini işle:
 
 ```php
-$loop = Workflow::addNode($workflow, 'loop', [
+$loop = $workflow->addNode('Each Item', 'loop', [
     'source_field' => 'order_items',
-], name: 'Each Item');
+]);
 
-$updateStock = Workflow::addNode($workflow, 'http_request', [
+$updateStock = $workflow->addNode('Update Stock', 'http_request', [
     'url'    => 'https://inventory.api/stock',
     'method' => 'POST',
     'body'   => ['sku' => '{{ item._loop_item.sku }}', 'qty' => '{{ item._loop_item.qty }}'],
-], name: 'Update Stock');
+]);
 
-Workflow::connect($loop->id, $updateStock->id, sourcePort: 'loop_item');
+$loop->connect($updateStock, sourcePort: 'loop_item');
 ```
 
 ### İnsan onayı bekleme
@@ -260,20 +261,22 @@ Workflow::connect($loop->id, $updateStock->id, sourcePort: 'loop_item');
 Biri onaylayana veya reddetene kadar workflow'u duraklat:
 
 ```php
-$wait = Workflow::addNode($workflow, 'wait_resume', [
+$wait = $workflow->addNode('Await Approval', 'wait_resume', [
     'timeout_seconds' => 259200, // 3 gün
-], name: 'Await Approval');
+]);
 
-$approved = Workflow::addNode($workflow, 'if_condition', [
+$approved = $workflow->addNode('Approved?', 'if_condition', [
     'field' => 'approved', 'operator' => 'equals', 'value' => true,
-], name: 'Approved?');
+]);
 
-Workflow::connect($wait->id, $approved->id, sourcePort: 'resume');
+$wait->connect($approved, sourcePort: 'resume');
 ```
 
 Workflow duraklar (`$run->status === 'waiting'`). Sonra devam ettirin:
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
+
 Workflow::resume($runId, $resumeToken, ['approved' => true]);
 ```
 
@@ -282,6 +285,8 @@ Veya API ile: `POST /workflow-engine/runs/{id}/resume` — `{"resume_token": "..
 ### Hatalı çalıştırmaları yeniden dene ve tekrar oynat
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
+
 // Replay: tamamlanmış veya hatalı workflow'u orijinal payload ile yeniden çalıştır
 Workflow::replay($runId);
 

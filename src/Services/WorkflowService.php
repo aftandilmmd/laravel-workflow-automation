@@ -217,12 +217,14 @@ class WorkflowService
     }
 
     public function connect(
-        int $sourceNodeId,
-        int $targetNodeId,
+        int|WorkflowNode $source,
+        int|WorkflowNode $target,
         string $sourcePort = 'main',
         string $targetPort = 'main',
     ): WorkflowEdge {
-        $sourceNode = WorkflowNode::findOrFail($sourceNodeId);
+        $sourceNodeId = $source instanceof WorkflowNode ? $source->id : $source;
+        $targetNodeId = $target instanceof WorkflowNode ? $target->id : $target;
+        $sourceNode = $source instanceof WorkflowNode ? $source : WorkflowNode::findOrFail($sourceNodeId);
 
         return WorkflowEdge::create([
             'workflow_id'    => $sourceNode->workflow_id,

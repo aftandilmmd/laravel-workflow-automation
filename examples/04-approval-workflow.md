@@ -21,7 +21,7 @@ Create an artisan command and run it once with `php artisan workflow:setup-appro
 ```php
 // app/Console/Commands/SetupApprovalWorkflow.php
 
-use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
+use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 use Illuminate\Console\Command;
 
 class SetupApprovalWorkflow extends Command
@@ -33,66 +33,66 @@ class SetupApprovalWorkflow extends Command
     {
         $workflow = Workflow::create(['name' => 'Purchase Approval']);
 
-        $trigger = Workflow::addNode($workflow, 'manual', name: 'New Request');
+        $trigger = $workflow->addNode('New Request', 'manual');
 
-        $checkAmount = Workflow::addNode($workflow, 'if_condition', [
+        $checkAmount = $workflow->addNode('Needs Approval?', 'if_condition', [
             'field'    => 'amount',
             'operator' => 'greater_than',
             'value'    => 1000,
-        ], name: 'Needs Approval?');
+        ]);
 
         // ── High value path: wait for manager ─────────────────
 
-        $askManager = Workflow::addNode($workflow, 'send_mail', [
+        $askManager = $workflow->addNode('Ask Manager', 'send_mail', [
             'to'      => '{{ item.manager_email }}',
             'subject' => 'Approval Required: ${{ item.amount }}',
             'body'    => '{{ item.requester }} needs approval for: {{ item.description }}',
-        ], name: 'Ask Manager');
+        ]);
 
-        $wait = Workflow::addNode($workflow, 'wait_resume', [
+        $wait = $workflow->addNode('Wait for Decision', 'wait_resume', [
             'timeout_seconds' => 259200, // 3 days
-        ], name: 'Wait for Decision');
+        ]);
 
-        $checkDecision = Workflow::addNode($workflow, 'if_condition', [
+        $checkDecision = $workflow->addNode('Approved?', 'if_condition', [
             'field'    => 'approved',
             'operator' => 'equals',
             'value'    => true,
-        ], name: 'Approved?');
+        ]);
 
-        $notifyApproved = Workflow::addNode($workflow, 'send_mail', [
+        $notifyApproved = $workflow->addNode('Notify Approved', 'send_mail', [
             'to'      => '{{ item.requester_email }}',
             'subject' => 'Purchase Approved',
             'body'    => 'Your request for ${{ item.amount }} has been approved.',
-        ], name: 'Notify Approved');
+        ]);
 
-        $notifyRejected = Workflow::addNode($workflow, 'send_mail', [
+        $notifyRejected = $workflow->addNode('Notify Rejected', 'send_mail', [
             'to'      => '{{ item.requester_email }}',
             'subject' => 'Purchase Rejected',
             'body'    => 'Your request for ${{ item.amount }} was rejected. Reason: {{ item.reason }}',
-        ], name: 'Notify Rejected');
+        ]);
 
         // ── Low value path: auto-approve ──────────────────────
 
-        $notifyAutoApproved = Workflow::addNode($workflow, 'send_mail', [
+        $notifyAutoApproved = $workflow->addNode('Notify Auto-Approved', 'send_mail', [
             'to'      => '{{ item.requester_email }}',
             'subject' => 'Purchase Auto-Approved',
             'body'    => 'Your request for ${{ item.amount }} was auto-approved (under $1,000).',
-        ], name: 'Notify Auto-Approved');
+        ]);
 
         // Edges
-        Workflow::connect($trigger->id, $checkAmount->id);
+        $trigger->connect($checkAmount);
 
         // High value: email manager → pause → check decision
-        Workflow::connect($checkAmount->id, $askManager->id, sourcePort: 'true');
-        Workflow::connect($askManager->id, $wait->id);
-        Workflow::connect($wait->id, $checkDecision->id, sourcePort: 'resume');
-        Workflow::connect($checkDecision->id, $notifyApproved->id, sourcePort: 'true');
-        Workflow::connect($checkDecision->id, $notifyRejected->id, sourcePort: 'false');
+        $checkAmount->connect($askManager, sourcePort: 'true');
+        $askManager->connect($wait);
+        $wait->connect($checkDecision, sourcePort: 'resume');
+        $checkDecision->connect($notifyApproved, sourcePort: 'true');
+        $checkDecision->connect($notifyRejected, sourcePort: 'false');
 
         // Low value: auto-approve
-        Workflow::connect($checkAmount->id, $notifyAutoApproved->id, sourcePort: 'false');
+        $checkAmount->connect($notifyAutoApproved, sourcePort: 'false');
 
-        Workflow::activate($workflow);
+        $workflow->activate();
 
         $this->info("Purchase Approval workflow created (ID: {$workflow->id})");
     }
@@ -104,9 +104,11 @@ class SetupApprovalWorkflow extends Command
 ```php
 // app/Http/Controllers/PurchaseController.php
 
-$workflow = WorkflowModel::where('name', 'Purchase Approval')->firstOrFail();
+use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 
-$run = Workflow::run($workflow, [[
+$workflow = Workflow::where('name', 'Purchase Approval')->firstOrFail();
+
+$run = $workflow->start([[
     'requester'       => auth()->user()->name,
     'requester_email' => auth()->user()->email,
     'manager_email'   => 'manager@company.com',
@@ -122,6 +124,8 @@ $run = Workflow::run($workflow, [[
 When the workflow hits `wait_resume`, it pauses and stores a `resume_token` in the node run output. Your UI reads this token and calls the resume endpoint:
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
+
 // Approve
 Workflow::resume($runId, $resumeToken, ['approved' => true]);
 

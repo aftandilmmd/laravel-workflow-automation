@@ -17,7 +17,7 @@ Create an artisan command and run it once with `php artisan workflow:setup-daily
 ```php
 // app/Console/Commands/SetupDailyReport.php
 
-use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
+use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 use Illuminate\Console\Command;
 
 class SetupDailyReport extends Command
@@ -29,43 +29,43 @@ class SetupDailyReport extends Command
     {
         $workflow = Workflow::create(['name' => 'Daily Sales Report']);
 
-        $trigger = Workflow::addNode($workflow, 'schedule', [
+        $trigger = $workflow->addNode('Daily 8 AM', 'schedule', [
             'interval_type' => 'custom_cron',
             'cron'          => '0 8 * * *', // Every day at 8:00 AM
-        ], name: 'Daily 8 AM');
+        ]);
 
-        $fetchData = Workflow::addNode($workflow, 'http_request', [
+        $fetchData = $workflow->addNode('Fetch Sales', 'http_request', [
             'url'    => 'https://analytics.example.com/api/daily-sales?date={{ date_format(now(), "Y-m-d") }}',
             'method' => 'GET',
-        ], name: 'Fetch Sales');
+        ]);
 
-        $filterNonZero = Workflow::addNode($workflow, 'filter', [
+        $filterNonZero = $workflow->addNode('Non-Zero Revenue', 'filter', [
             'conditions' => [
                 ['field' => 'revenue', 'operator' => 'greater_than', 'value' => 0],
             ],
-        ], name: 'Non-Zero Revenue');
+        ]);
 
-        $aggregate = Workflow::addNode($workflow, 'aggregate', [
+        $aggregate = $workflow->addNode('By Department', 'aggregate', [
             'group_by'   => 'department',
             'operations' => [
                 ['field' => 'revenue',      'function' => 'sum', 'alias' => 'total_revenue'],
                 ['field' => 'transactions', 'function' => 'sum', 'alias' => 'total_transactions'],
             ],
-        ], name: 'By Department');
+        ]);
 
-        $sendReport = Workflow::addNode($workflow, 'send_mail', [
+        $sendReport = $workflow->addNode('Email Report', 'send_mail', [
             'to'      => 'team@company.com',
             'subject' => 'Daily Sales Report — {{ date_format(now(), "M d, Y") }}',
             'body'    => 'Daily sales report attached.',
-        ], name: 'Email Report');
+        ]);
 
         // Edges
-        Workflow::connect($trigger->id, $fetchData->id);
-        Workflow::connect($fetchData->id, $filterNonZero->id);
-        Workflow::connect($filterNonZero->id, $aggregate->id);
-        Workflow::connect($aggregate->id, $sendReport->id);
+        $trigger->connect($fetchData);
+        $fetchData->connect($filterNonZero);
+        $filterNonZero->connect($aggregate);
+        $aggregate->connect($sendReport);
 
-        Workflow::activate($workflow);
+        $workflow->activate();
 
         $this->info("Daily Sales Report workflow created (ID: {$workflow->id})");
     }
@@ -115,22 +115,22 @@ That's it. At 8:00 AM every day, the workflow runs automatically.
 
 ```php
 // Every 5 minutes
-Workflow::addNode($workflow, 'schedule', [
+$workflow->addNode('Every 5 Min', 'schedule', [
     'interval_type'  => 'minutes',
     'interval_value' => 5,
-], name: 'Every 5 Min');
+]);
 
 // Weekdays at 9 AM
-Workflow::addNode($workflow, 'schedule', [
+$workflow->addNode('Weekday 9 AM', 'schedule', [
     'interval_type' => 'custom_cron',
     'cron'          => '0 9 * * 1-5',
-], name: 'Weekday 9 AM');
+]);
 
 // First day of each month
-Workflow::addNode($workflow, 'schedule', [
+$workflow->addNode('Monthly', 'schedule', [
     'interval_type' => 'custom_cron',
     'cron'          => '0 0 1 * *',
-], name: 'Monthly');
+]);
 ```
 
 ## Concepts Demonstrated

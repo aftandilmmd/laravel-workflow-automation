@@ -3,6 +3,7 @@
 namespace Aftandilmmd\WorkflowAutomation\Models;
 
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
+use Aftandilmmd\WorkflowAutomation\Services\WorkflowService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -55,5 +56,72 @@ class Workflow extends Model
     public function triggerNode(): ?WorkflowNode
     {
         return $this->nodes()->where('type', NodeType::Trigger)->first();
+    }
+
+    // ── Fluent API ──────────────────────────────────────────────
+
+    public function addNode(string $name, string $nodeKey, array $config = []): WorkflowNode
+    {
+        return $this->service()->addNode($this, $nodeKey, $config, $name);
+    }
+
+    public function connect(
+        int|WorkflowNode $source,
+        int|WorkflowNode $target,
+        string $sourcePort = 'main',
+        string $targetPort = 'main',
+    ): WorkflowEdge {
+        return $this->service()->connect($source, $target, $sourcePort, $targetPort);
+    }
+
+    public function activate(): static
+    {
+        $this->service()->activate($this);
+        $this->refresh();
+
+        return $this;
+    }
+
+    public function deactivate(): static
+    {
+        $this->service()->deactivate($this);
+        $this->refresh();
+
+        return $this;
+    }
+
+    public function validateGraph(): array
+    {
+        return $this->service()->validate($this);
+    }
+
+    public function start(array $payload = []): WorkflowRun
+    {
+        return $this->service()->run($this, $payload);
+    }
+
+    public function startAsync(array $payload = []): void
+    {
+        $this->service()->runAsync($this, $payload);
+    }
+
+    public function duplicate(): self
+    {
+        return $this->service()->duplicate($this);
+    }
+
+    public function removeNode(int $nodeId): void
+    {
+        $this->service()->removeNode($nodeId);
+    }
+
+    public function removeEdge(int $edgeId): void
+    {
+        $this->service()->removeEdge($edgeId);
+    }
+
+    private function service(): WorkflowService
+    {
+        return app(WorkflowService::class);
     }
 }
