@@ -54,14 +54,20 @@ return [
     | HTTP Routes
     |--------------------------------------------------------------------------
     |
-    | Configure the API route prefix and middleware. Set 'routes' to false
-    | to disable all package-provided routes entirely.
+    | 'routes'          — Master switch. Set to false to disable ALL routes.
+    | 'api_routes'      — Enable/disable the CRUD + execution API endpoints.
+    | 'webhook_routes'  — Enable/disable the webhook trigger endpoints.
+    |
+    | Both 'api_routes' and 'webhook_routes' require 'routes' to be true.
+    | When 'routes' is false, everything is disabled regardless.
     |
     */
 
-    'routes'     => true,
-    'prefix'     => env('WORKFLOW_PREFIX', 'workflow-engine'),
-    'middleware'  => ['api'],
+    'routes'          => true,
+    'api_routes'      => env('WORKFLOW_API_ROUTES', true),
+    'webhook_routes'  => env('WORKFLOW_WEBHOOK_ROUTES', true),
+    'prefix'          => env('WORKFLOW_PREFIX', 'workflow-engine'),
+    'middleware'      => ['api'],
 
     /*
     |--------------------------------------------------------------------------
@@ -112,6 +118,34 @@ return [
         'app_paths' => [
             // app_path('Workflow/Nodes'),
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Run Command Node
+    |--------------------------------------------------------------------------
+    |
+    | Security settings for the run_command action node.
+    |
+    | 'allowed_commands' — Whitelist of allowed commands. Supports exact matches
+    | and wildcard patterns (e.g. 'cache:*'). When empty, all commands are
+    | allowed. It is strongly recommended to set this in production.
+    |
+    | 'shell_enabled' — Set to false to disable shell commands entirely,
+    | allowing only artisan commands. Defaults to true.
+    |
+    */
+
+    'run_command' => [
+        'allowed_commands' => [
+            // 'cache:clear',
+            // 'cache:forget',
+            // 'queue:restart',
+            // 'migrate',
+            // 'db:seed',
+            // './scripts/*',
+        ],
+        'shell_enabled' => env('WORKFLOW_SHELL_ENABLED', true),
     ],
 
     /*

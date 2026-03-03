@@ -1,0 +1,123 @@
+# Database Schema
+
+The package creates 5 tables. All table names are configurable in `config/workflow-automation.php`.
+
+## workflows
+
+The main workflow container.
+
+| Column | Type | Default | Description |
+|--------|------|---------|-------------|
+| `id` | bigint (PK) | auto | Primary key |
+| `name` | varchar | — | Workflow name |
+| `description` | text | null | Optional description |
+| `is_active` | boolean | `false` | Whether the workflow can be triggered |
+| `run_async` | boolean | `true` | Default async execution behavior |
+| `settings` | json | null | Global settings (e.g. `{"retry_count": 3}`) |
+| `created_at` | timestamp | — | — |
+| `updated_at` | timestamp | — | — |
+| `deleted_at` | timestamp | null | Soft delete |
+
+## workflow_nodes
+
+Individual steps within a workflow.
+
+| Column | Type | Default | Description |
+|--------|------|---------|-------------|
+| `id` | bigint (PK) | auto | Primary key |
+| `workflow_id` | bigint (FK) | — | Parent workflow (cascades on delete) |
+| `type` | varchar(50) | — | Node category: `trigger`, `action`, `condition`, etc. |
+| `node_key` | varchar(100) | — | Node implementation key (e.g. `send_mail`) |
+| `name` | varchar | null | Display name |
+| `config` | json | `{}` | Node-specific configuration |
+| `position_x` | integer | `0` | X position for UI rendering |
+| `position_y` | integer | `0` | Y position for UI rendering |
+| `created_at` | timestamp | — | — |
+| `updated_at` | timestamp | — | — |
+
+**Indexes:** `(workflow_id, type)`
+
+## workflow_edges
+
+Connections between nodes.
+
+| Column | Type | Default | Description |
+|--------|------|---------|-------------|
+| `id` | bigint (PK) | auto | Primary key |
+| `workflow_id` | bigint (FK) | — | Parent workflow (cascades on delete) |
+| `source_node_id` | bigint (FK) | — | Source node (cascades on delete) |
+| `source_port` | varchar(50) | `'main'` | Source output port name |
+| `target_node_id` | bigint (FK) | — | Target node (cascades on delete) |
+| `target_port` | varchar(50) | `'main'` | Target input port name |
+| `created_at` | timestamp | — | — |
+| `updated_at` | timestamp | — | — |
+
+**Indexes:** `workflow_id`, `(source_node_id, source_port)`
+
+## workflow_runs
+
+Execution records for each workflow invocation.
+
+| Column | Type | Default | Description |
+|--------|------|---------|-------------|
+| `id` | bigint (PK) | auto | Primary key |
+| `workflow_id` | bigint (FK) | — | Which workflow was executed |
+| `status` | varchar(20) | `'pending'` | `pending`, `running`, `waiting`, `completed`, `failed`, `cancelled` |
+| `trigger_node_id` | bigint (FK) | null | Which trigger started the run |
+| `initial_payload` | json | null | Original payload passed to `start()` |
+| `context` | json | null | Serialized node outputs (for resume) |
+| `error_message` | text | null | Error message if failed |
+| `started_at` | timestamp | null | When execution began |
+| `finished_at` | timestamp | null | When execution ended |
+| `created_at` | timestamp | — | — |
+| `updated_at` | timestamp | — | — |
+
+**Indexes:** `(workflow_id, status)`, `created_at`
+
+## workflow_node_runs
+
+Per-node execution logs within a run.
+
+| Column | Type | Default | Description |
+|--------|------|---------|-------------|
+| `id` | bigint (PK) | auto | Primary key |
+| `workflow_run_id` | bigint (FK) | — | Parent run (cascades on delete) |
+| `node_id` | bigint (FK) | — | Which node was executed |
+| `status` | varchar(20) | `'pending'` | `pending`, `running`, `completed`, `failed`, `skipped` |
+| `input` | json | null | Items received by the node |
+| `output` | json | null | Items produced, keyed by port |
+| `error_message` | text | null | Error details |
+| `duration_ms` | unsigned int | null | Execution time in milliseconds |
+| `attempts` | unsigned int | `0` | Number of execution attempts |
+| `executed_at` | timestamp | null | When the node started executing |
+| `created_at` | timestamp | — | — |
+| `updated_at` | timestamp | — | — |
+
+**Indexes:** `(workflow_run_id, node_id)`
+
+## Relationships
+
+```
+workflows ─┬─ workflow_nodes
+            ├─ workflow_edges
+            └─ workflow_runs ── workflow_node_runs
+```
+
+- Deleting a workflow cascades to nodes, edges, and (via runs) node runs
+- Deleting a node cascades to its edges
+- Deleting a run cascades to its node runs
+
+## Custom Table Names
+
+Change before running migrations:
+
+```php
+// config/workflow-automation.php
+'tables' => [
+    'workflows'  => 'custom_workflows',
+    'nodes'      => 'custom_workflow_nodes',
+    'edges'      => 'custom_workflow_edges',
+    'runs'       => 'custom_workflow_runs',
+    'node_runs'  => 'custom_workflow_node_runs',
+],
+```
