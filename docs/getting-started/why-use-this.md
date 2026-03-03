@@ -52,7 +52,64 @@ class OrderController {
 }
 ```
 
-The automation lives in a workflow: `Model Event Trigger → Send Mail → IF Condition → Slack / Manager Email → HTTP Request`. Change it anytime, no deploy needed.
+The automation moves into a workflow — created once via PHP, the visual editor, or the REST API:
+
+```php
+$workflow = Workflow::create(['name' => 'Order Automation']);
+
+// Trigger: fires when an Order is created
+$trigger = $workflow->addNode('Order Created', 'model_event', [
+    'model' => 'App\\Models\\Order',
+    'event' => 'created',
+]);
+
+// Send confirmation email
+$confirm = $workflow->addNode('Confirmation Email', 'send_mail', [
+    'to'      => '{{ item.user.email }}',
+    'subject' => 'Order #{{ item.id }} confirmed',
+    'body'    => 'Thanks for your order!',
+]);
+
+// Notify Slack
+$slack = $workflow->addNode('Slack Notify', 'http_request', [
+    'url'    => 'https://hooks.slack.com/...',
+    'method' => 'POST',
+    'body'   => '{"text": "New order #{{ item.id }} — ${{ item.total }}"}',
+]);
+
+// Check if high-value
+$check = $workflow->addNode('High Value?', 'if_condition', [
+    'field'    => '{{ item.total }}',
+    'operator' => '>',
+    'value'    => '1000',
+]);
+
+// Notify manager for high-value orders
+$manager = $workflow->addNode('Notify Manager', 'send_mail', [
+    'to'      => 'manager@company.com',
+    'subject' => 'High-value order #{{ item.id }}',
+    'body'    => 'Order total: ${{ item.total }}',
+]);
+
+// Log to analytics
+$analytics = $workflow->addNode('Analytics', 'http_request', [
+    'url'    => 'https://analytics.example.com/events',
+    'method' => 'POST',
+    'body'   => '{"event": "order", "id": {{ item.id }}}',
+]);
+
+// Connect the flow
+$trigger->connect($confirm);
+$confirm->connect($slack);
+$slack->connect($check);
+$check->connect($manager, 'true');   // high-value path
+$check->connect($analytics, 'false'); // normal path
+$manager->connect($analytics);
+
+$workflow->activate();
+```
+
+Same behavior, but now it's **visible**, **editable**, **observable**, and **manageable** — without touching the controller again.
 
 ## Key Benefits
 
@@ -162,18 +219,119 @@ No PHP files opened. No deploy needed. And if it's wrong:
 
 ## Use Cases
 
-| Scenario | Workflow |
-|----------|----------|
-| **Customer onboarding** | Model Event → Delay → HTTP Request → IF Condition → Send Mail |
-| **Lead scoring** | Webhook (form submit) → AI Node (score) → IF (score > 80) → CRM + Email |
-| **Content moderation** | Webhook (new post) → AI Node (analyze) → IF (flagged) → Notification + Update Model |
-| **Invoice approval** | Webhook → IF (amount > 1000) → Send Mail (manager) → Wait/Resume → Approve/Reject |
-| **Data enrichment** | Schedule → DB Query → Loop → HTTP Request (API) → Update Model |
-| **Automated reporting** | Schedule (daily) → HTTP Request (data) → AI Node (summarize) → Send Mail |
-| **Stripe webhook handler** | Webhook → Switch (event type) → Update Model / Send Mail / Slack |
-| **Email drip campaign** | Model Event → Delay (1d) → Send Mail → Delay (3d) → Send Mail → Delay (7d) → Send Mail |
-| **Error alerting** | Schedule → HTTP Request (health check) → IF (failed) → Slack + Email |
-| **Inventory sync** | Schedule → HTTP Request (supplier API) → Loop → IF (changed) → Update Model + Notification |
+### Customer Onboarding
+
+```
+┌  Model Event (User created)
+│
+├─ Delay (3 days)
+│
+├─ HTTP Request
+│  GET /api/usage?user={{ item.id }}
+│
+◇─ IF Condition
+│  usage_count > 0
+│
+├─ true  → Send Mail (onboarding tips)
+│          to: {{ item.email }}
+│
+├─ false → Send Mail (reminder)
+│          "We noticed you haven't tried..."
+│
+└  Done
+```
+
+### Lead Scoring with AI
+
+```
+┌  Webhook (form submitted)
+│
+├─ AI Node
+│  "Score this lead 0-100: {{ item }}"
+│
+◇─ IF Condition
+│  ai_score > 80
+│
+├─ true  → HTTP Request (create CRM deal)
+│        → Send Mail (sales team alert)
+│
+├─ false → Send Mail (nurture sequence)
+│
+└  Done
+```
+
+### Invoice Approval
+
+```
+┌  Webhook (invoice.created)
+│
+◇─ IF Condition
+│  item.total > 1000
+│
+├─ true  → Send Mail (manager approval request)
+│        → Wait / Resume (approval token)
+│        → Update Model (invoice.status = approved)
+│
+├─ false → Update Model (invoice.status = auto_approved)
+│
+└  Done
+```
+
+### Email Drip Campaign
+
+```
+┌  Model Event (User created)
+│
+├─ Delay (1 day)
+├─ Send Mail — "Welcome to the platform"
+│
+├─ Delay (3 days)
+├─ Send Mail — "Here are 3 tips to get started"
+│
+├─ Delay (7 days)
+├─ Send Mail — "Ready to upgrade?"
+│
+└  Done
+```
+
+### Error Alerting
+
+```
+┌  Schedule (every 5 minutes)
+│
+├─ HTTP Request
+│  GET https://api.example.com/health
+│
+◇─ IF Condition
+│  status != 200
+│
+├─ true  → HTTP Request (Slack webhook)
+│          "Health check failed: {{ item.status }}"
+│        → Send Mail (ops team)
+│
+├─ false → (no action)
+│
+└  Done
+```
+
+### Stripe Webhook Handler
+
+```
+┌  Webhook (stripe event)
+│
+◇─ Switch (item.type)
+│
+├─ invoice.paid      → Update Model (subscription.status = active)
+│                    → Send Mail (payment receipt)
+│
+├─ invoice.failed    → Send Mail (payment failed warning)
+│                    → HTTP Request (Slack alert)
+│
+├─ customer.deleted  → Update Model (user.status = churned)
+│                    → Send Mail (offboarding)
+│
+└  Done
+```
 
 ## When to Use
 
