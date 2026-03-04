@@ -16,8 +16,20 @@ class AiAction extends BaseNode
         return [
             ['key' => 'prompt',          'type' => 'textarea', 'label' => 'Prompt',              'required' => true,  'supports_expression' => true],
             ['key' => 'system_prompt',   'type' => 'textarea', 'label' => 'System Prompt',       'required' => false, 'supports_expression' => true],
-            ['key' => 'provider',        'type' => 'string',   'label' => 'Provider',            'required' => false, 'supports_expression' => false],
-            ['key' => 'model',           'type' => 'string',   'label' => 'Model',               'required' => false, 'supports_expression' => false],
+            ['key' => 'provider',        'type' => 'select',   'label' => 'Provider',            'required' => false, 'options' => [
+                'openai', 'anthropic', 'gemini', 'groq', 'mistral', 'deepseek', 'ollama', 'xai', 'cohere',
+            ]],
+            ['key' => 'model', 'type' => 'select', 'label' => 'Model', 'required' => false, 'depends_on' => 'provider', 'options_map' => [
+                'openai'    => ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4o', 'gpt-4o-mini', 'o3', 'o3-mini', 'o4-mini'],
+                'anthropic' => ['claude-sonnet-4-5-20250514', 'claude-haiku-4-5-20251001', 'claude-opus-4-20250514', 'claude-sonnet-4-20250514'],
+                'gemini'    => ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'],
+                'groq'      => ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it'],
+                'mistral'   => ['mistral-large-latest', 'mistral-medium-latest', 'mistral-small-latest', 'open-mistral-nemo'],
+                'deepseek'  => ['deepseek-chat', 'deepseek-reasoner'],
+                'ollama'    => ['llama3.3', 'llama3.1', 'gemma2', 'mistral', 'codellama', 'phi3'],
+                'xai'       => ['grok-3', 'grok-3-mini', 'grok-2'],
+                'cohere'    => ['command-r-plus', 'command-r', 'command-light'],
+            ]],
             ['key' => 'temperature',     'type' => 'string',   'label' => 'Temperature (0-2)',   'required' => false, 'supports_expression' => false],
             ['key' => 'max_tokens',      'type' => 'integer',  'label' => 'Max Tokens',          'required' => false],
             ['key' => 'output_key',      'type' => 'string',   'label' => 'Output Key',          'required' => false, 'supports_expression' => false],
