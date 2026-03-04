@@ -27,6 +27,9 @@ export function DynamicForm({ schema, values, onChange }: Props) {
           return Array.isArray(expected) ? expected.includes(current as string) : current === expected
         })
         .map((field) => {
+          const resolvedField = field.depends_on && field.options_map
+            ? { ...field, options: field.options_map[values[field.depends_on] as string] ?? [] }
+            : field
           const value = values[field.key]
           return (
             <div key={field.key}>
@@ -36,7 +39,7 @@ export function DynamicForm({ schema, values, onChange }: Props) {
                   {field.required && <span className="ml-0.5 text-red-400">*</span>}
                 </label>
               )}
-              <FieldRenderer field={field} value={value} onChange={(v) => onChange(field.key, v)} />
+              <FieldRenderer field={resolvedField} value={value} onChange={(v) => onChange(field.key, v)} />
             </div>
           )
         })}

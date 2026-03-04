@@ -84,6 +84,8 @@ export interface ConfigSchemaField {
   required?: boolean
   options?: string[]
   options_from?: string
+  depends_on?: string
+  options_map?: Record<string, string[]>
   supports_expression?: boolean
   readonly?: boolean
   schema?: ConfigSchemaField[]
