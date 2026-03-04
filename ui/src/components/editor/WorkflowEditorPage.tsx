@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
   Play,
+  Copy,
   ToggleLeft,
   ToggleRight,
   Clock,
@@ -24,6 +25,7 @@ import { NodeConfigPanel } from '../config/NodeConfigPanel'
 import { RunHistoryPanel } from '../runs/RunHistoryPanel'
 import { ExecuteModal } from '../execution/ExecuteModal'
 import { LoadingSpinner } from '../shared/LoadingSpinner'
+import { ConfirmDialog } from '../shared/ConfirmDialog'
 
 type SidebarTab = 'palette' | 'runs'
 
@@ -36,6 +38,8 @@ export function WorkflowEditorPage() {
   const { theme, toggle: toggleTheme } = useThemeStore()
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('palette')
   const [showExecute, setShowExecute] = useState(false)
+  const [isDuplicating, setIsDuplicating] = useState(false)
+  const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -56,6 +60,17 @@ export function WorkflowEditorPage() {
       await workflowsApi.activate(workflow.id)
     }
     loadWorkflow(workflow.id, useRegistryStore.getState().getByKey)
+  }
+
+  const handleDuplicate = async () => {
+    if (!workflow || isDuplicating) return
+    setIsDuplicating(true)
+    try {
+      const res = await workflowsApi.duplicate(workflow.id)
+      navigate(`/${res.data.id}`)
+    } finally {
+      setIsDuplicating(false)
+    }
   }
 
   if (isLoading || !workflow) {
@@ -96,6 +111,15 @@ export function WorkflowEditorPage() {
             {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
           </button>
           <ExportDropdown workflow={workflow} />
+          <button
+            onClick={() => setShowDuplicateConfirm(true)}
+            disabled={isDuplicating}
+            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 disabled:opacity-50"
+            title="Duplicate"
+          >
+            <Copy size={14} />
+            {isDuplicating ? 'Duplicating...' : 'Duplicate'}
+          </button>
           <button
             onClick={handleToggleActive}
             className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
@@ -171,6 +195,18 @@ export function WorkflowEditorPage() {
           }}
         />
       )}
+      <ConfirmDialog
+        open={showDuplicateConfirm}
+        title="Duplicate Workflow"
+        message={`Create a copy of "${workflow.name}"? The duplicate will be inactive by default.`}
+        confirmLabel="Duplicate"
+        variant="primary"
+        onConfirm={async () => {
+          setShowDuplicateConfirm(false)
+          await handleDuplicate()
+        }}
+        onCancel={() => setShowDuplicateConfirm(false)}
+      />
     </div>
     </ReactFlowProvider>
   )
