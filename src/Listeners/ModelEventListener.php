@@ -59,18 +59,22 @@ class ModelEventListener
      */
     private static function getActiveTriggers(): array
     {
-        return Cache::remember('workflow:model_event_triggers', 60, function () {
-            return WorkflowNode::query()
-                ->where('type', NodeType::Trigger)
-                ->where('node_key', 'model_event')
-                ->whereHas('workflow', fn ($q) => $q->where('is_active', true))
-                ->get()
-                ->map(fn (WorkflowNode $node) => [
-                    'workflow_id' => $node->workflow_id,
-                    'node_id'     => $node->id,
-                    'config'      => $node->config ?? [],
-                ])
-                ->toArray();
-        });
+        try {
+            return Cache::remember('workflow:model_event_triggers', 60, function () {
+                return WorkflowNode::query()
+                    ->where('type', NodeType::Trigger)
+                    ->where('node_key', 'model_event')
+                    ->whereHas('workflow', fn ($q) => $q->where('is_active', true))
+                    ->get()
+                    ->map(fn (WorkflowNode $node) => [
+                        'workflow_id' => $node->workflow_id,
+                        'node_id'     => $node->id,
+                        'config'      => $node->config ?? [],
+                    ])
+                    ->toArray();
+            });
+        } catch (\Illuminate\Database\QueryException) {
+            return [];
+        }
     }
 }
