@@ -45,15 +45,25 @@ Every `User::create()` call now triggers the workflow automatically.
 
 ## Features
 
-- **26 Built-in Nodes** — Triggers, actions, conditions, loops, delays, AI, and more
-- **Visual Editor** — Drag-and-drop React Flow canvas at `/workflow-editor`
-- **Expression Engine** — `{{ item.email }}`, arithmetic, functions — no `eval()`
-- **5 Trigger Types** — Manual, model event, Laravel event, webhook, cron schedule
-- **Human-in-the-Loop** — Pause workflows and resume on external signal
-- **Retry & Replay** — Re-run from failure point or replay with original payload
-- **Custom Nodes** — One PHP class with `#[AsWorkflowNode]` attribute
-- **Plugin System** — Bundle nodes, middleware, and listeners into reusable packages
-- **Full REST API** — CRUD + execution endpoints for any frontend or AI agent
+**Visual Editor** — Drag-and-drop workflow builder with React Flow canvas. Add nodes, connect ports, configure forms, execute and monitor — all from `/workflow-editor`.
+
+**26 Built-in Nodes** — Triggers, actions, conditions, loops, delays, AI, and more. Connect them like building blocks to handle common automation scenarios without writing code.
+
+**Expression Engine** — Use `{{ item.email }}`, arithmetic, ternary, and 30+ built-in functions in any config field. Custom recursive descent parser — no `eval()`.
+
+**5 Trigger Types** — Start workflows manually, on Eloquent model events, Laravel events, incoming webhooks, or cron schedules.
+
+**Human-in-the-Loop** — Pause a running workflow and wait for external approval. Resume via code or REST API with arbitrary payload data.
+
+**Retry & Replay** — Re-run failed workflows from the exact point of failure, replay completed runs with original payload, or retry individual nodes.
+
+**Custom Nodes** — One PHP class with `#[AsWorkflowNode]` attribute. Define input/output ports, config schema, and execution logic — the engine handles the rest.
+
+**Plugin System** — Bundle custom nodes, middleware, and event listeners into reusable plugins. Share across projects or publish as Composer packages.
+
+**Full REST API** — Create, edit, run, and monitor workflows from any frontend, dashboard, or AI agent. Complete CRUD, execution, and registry endpoints.
+
+**Full Observability** — Every run is recorded with per-node input/output, duration, and errors. Trace failures, debug responses, replay any run.
 
 ## Testing
 

@@ -45,15 +45,25 @@ Her `User::create()` çağrısı artık workflow'u otomatik tetikler.
 
 ## Özellikler
 
-- **26 Hazır Node** — Tetikleyiciler, aksiyonlar, koşullar, döngüler, gecikmeler, AI ve daha fazlası
-- **Görsel Editör** — `/workflow-editor` adresinde sürükle-bırak React Flow canvas
-- **İfade Motoru** — `{{ item.email }}`, aritmetik, fonksiyonlar — `eval()` yok
-- **5 Tetikleyici Tipi** — Manuel, model event, Laravel event, webhook, cron zamanlama
-- **İnsan Onayı** — Workflow'ları duraklatın ve dış sinyal ile devam ettirin
-- **Yeniden Deneme & Tekrar Oynatma** — Hata noktasından devam veya orijinal payload ile tekrar çalıştırma
-- **Özel Node'lar** — `#[AsWorkflowNode]` attribute ile tek bir PHP sınıfı
-- **Plugin Sistemi** — Node'ları, middleware'leri ve listener'ları yeniden kullanılabilir paketlere dönüştürün
-- **Tam REST API** — Her frontend veya AI agent için CRUD + çalıştırma endpoint'leri
+**Görsel Editör** — React Flow canvas ile sürükle-bırak workflow oluşturucu. Node ekle, portları bağla, formları yapılandır, çalıştır ve izle — hepsi `/workflow-editor` adresinden.
+
+**26 Hazır Node** — Tetikleyiciler, aksiyonlar, koşullar, döngüler, gecikmeler, AI ve daha fazlası. Yaygın otomasyon senaryolarını kod yazmadan, yapı taşları gibi birbirine bağlayarak çözün.
+
+**İfade Motoru** — Herhangi bir config alanında `{{ item.email }}`, aritmetik, ternary ve 30+ hazır fonksiyon kullanın. Özel recursive descent parser — `eval()` yok.
+
+**5 Tetikleyici Tipi** — Workflow'ları manuel olarak, Eloquent model eventlerinde, Laravel eventlerinde, gelen webhook'larda veya cron zamanlamalarında başlatın.
+
+**İnsan Onayı** — Çalışan bir workflow'u duraklatın ve dış onay bekleyin. Kod veya REST API üzerinden istediğiniz payload ile devam ettirin.
+
+**Yeniden Deneme & Tekrar Oynatma** — Başarısız workflow'ları tam hata noktasından yeniden çalıştırın, tamamlanmış çalıştırmaları orijinal payload ile tekrar oynatın veya tek bir node'u yeniden deneyin.
+
+**Özel Node'lar** — `#[AsWorkflowNode]` attribute ile tek bir PHP sınıfı. Giriş/çıkış portlarını, config şemasını ve çalıştırma mantığını tanımlayın — gerisini motor halleder.
+
+**Plugin Sistemi** — Özel node'ları, middleware'leri ve event listener'ları yeniden kullanılabilir plugin'lere dönüştürün. Projeler arasında paylaşın veya Composer paketi olarak yayınlayın.
+
+**Tam REST API** — Herhangi bir frontend, dashboard veya AI agent'tan workflow oluşturun, düzenleyin, çalıştırın ve izleyin. Eksiksiz CRUD, çalıştırma ve registry endpoint'leri.
+
+**Tam Gözlemlenebilirlik** — Her çalıştırma, node bazında giriş/çıkış, süre ve hatalarıyla birlikte kaydedilir. Hataları izleyin, yanıtları debug edin, herhangi bir çalıştırmayı tekrar oynatın.
 
 ## Test
 
