@@ -52,6 +52,9 @@
             }
         }
     },
+    "suggest": {
+        "laravel/mcp": "Required for MCP server support — lets AI clients manage workflows via Model Context Protocol (^1.0)"
+    },
     "minimum-stability": "stable",
     "prefer-stable": true,
     "config": {

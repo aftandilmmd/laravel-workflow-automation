@@ -120,9 +120,11 @@ export default defineConfig({
           ],
         },
         {
-          text: 'Visual Editor',
+          text: 'Integrations',
+          collapsed: false,
           items: [
-            { text: 'UI Editor', link: '/ui-editor' },
+            { text: 'Visual Editor', link: '/ui-editor' },
+            { text: 'MCP Server', link: '/mcp' },
           ],
         },
         advancedSection,

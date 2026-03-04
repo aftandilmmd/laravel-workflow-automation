@@ -180,4 +180,21 @@ return [
 
     'log_retention_days' => env('WORKFLOW_LOG_RETENTION', 30),
 
+    /*
+    |--------------------------------------------------------------------------
+    | MCP Server (Model Context Protocol)
+    |--------------------------------------------------------------------------
+    |
+    | Enable the built-in MCP server so AI clients (Claude, GPT, etc.) can
+    | create, edit, and execute workflows through the MCP protocol.
+    |
+    | Requires the laravel/mcp package: composer require laravel/mcp
+    |
+    */
+
+    'mcp' => [
+        'enabled' => env('WORKFLOW_MCP_ENABLED', false),
+        'path'    => '/mcp/workflow',
+    ],
+
 ];

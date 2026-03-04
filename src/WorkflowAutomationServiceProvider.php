@@ -71,6 +71,23 @@ class WorkflowAutomationServiceProvider extends ServiceProvider
         }
 
         $this->registerBuiltInNodes();
+        $this->registerMcpServer();
+    }
+
+    private function registerMcpServer(): void
+    {
+        if (! config('workflow-automation.mcp.enabled', false)) {
+            return;
+        }
+
+        if (! class_exists(\Laravel\Mcp\Facades\Mcp::class)) {
+            return;
+        }
+
+        \Laravel\Mcp\Facades\Mcp::web(
+            config('workflow-automation.mcp.path', '/mcp/workflow'),
+            \Aftandilmmd\WorkflowAutomation\Mcp\WorkflowMcpServer::class,
+        );
     }
 
     private function registerBuiltInNodes(): void
