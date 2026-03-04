@@ -9,6 +9,8 @@
 
 **[Detaylı Dokümantasyon](https://laravel-workflow.pilyus.com)**
 
+![Workflow Editor](docs/screenshots/workflow-editor.png)
+
 ## Kurulum
 
 ```bash
