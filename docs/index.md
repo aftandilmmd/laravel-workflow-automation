@@ -2,9 +2,8 @@
 layout: home
 
 hero:
-  name: Laravel Workflow Automation
-  text: Automation Engine for Laravel
-  tagline: Turn your Laravel app into a programmable automation platform. Design workflows visually, let AI agents extend your app through the API, and keep your core code clean.
+  name: Build Workflows, Not Boilerplate
+  tagline: Stop hardcoding automation in controllers. Design trigger → condition → action flows visually or through code — and let AI agents extend your app without touching a single PHP file.
   actions:
     - theme: brand
       text: Get Started
@@ -15,50 +14,60 @@ hero:
 
 features:
   - icon: 🔗
-    title: 24 Built-in Nodes
-    details: Triggers, actions, conditions, transformers, control flow, utility, and AI nodes ready to use out of the box.
+    title: 25 Ready-to-Use Nodes
+    details: Email, HTTP, AI, delays, conditions, loops — connect them like building blocks. No code needed for common scenarios.
   - icon: ⚡
-    title: Expression Engine
-    details: "Powerful {{ expression }} syntax with 38+ functions — no eval(), fully sandboxed recursive descent parser."
+    title: Dynamic Expressions
+    details: "Use {{ item.email }} to reference any data in your flow. 38+ built-in functions, fully sandboxed — no eval(), no risk."
   - icon: 🔄
-    title: BFS Graph Execution
-    details: Breadth-first traversal with automatic multi-input merging, pause/resume, and retry with backoff.
+    title: Reliable Execution
+    details: Every node runs in order with automatic retries and backoff. Pause, resume, and pick up right where you left off.
   - icon: 🛠️
-    title: Custom Nodes
-    details: "Create your own nodes with a single PHP attribute: #[AsWorkflowNode]. Auto-discovered, zero config."
+    title: Extend with One Class
+    details: "Write a single PHP class with #[AsWorkflowNode] — it's instantly available in the editor, API, and registry. Zero config."
   - icon: 🌐
     title: Full REST API
-    details: Complete CRUD + execution endpoints. Build visual workflow editors, dashboards, or integrate with any frontend.
+    details: Create, edit, run, and monitor workflows from any frontend, dashboard, or AI agent. Complete CRUD + execution endpoints.
   - icon: ⏱️
-    title: Human-in-the-Loop
-    details: Wait/Resume nodes for approval workflows. Pause execution, generate tokens, resume with external payload.
+    title: Approval Workflows
+    details: Need manager sign-off? Wait/Resume nodes pause the flow, send a unique token, and continue when approved.
 ---
 
 ## Quick Overview
 
+Run this once — from a command, seeder, or Tinker — and the workflow lives in the database forever.
+
 ```php
+use App\Models\User;
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 
 // 1. Create a workflow
 $workflow = Workflow::create(['name' => 'Welcome Email']);
 
 // 2. Add nodes
-$trigger  = $workflow->addNode('Start', 'manual');
+$trigger = $workflow->addNode('User Registered', 'model_event', [
+    'model'  => User::class,
+    'events' => ['created'],
+]);
+
 $sendMail = $workflow->addNode('Send Welcome', 'send_mail', [
     'to'      => '{{ item.email }}',
     'subject' => 'Welcome, {{ item.name }}!',
     'body'    => 'Thanks for joining us.',
 ]);
 
+$notifyAdmin = $workflow->addNode('Notify Admin', 'send_notification', [
+    'notification_class'  => \App\Notifications\NewUserSignup::class,
+    'notifiable_model'    => User::class,
+    'notifiable_id_field' => 'id',
+]);
+
 // 3. Connect & activate
 $trigger->connect($sendMail);
+$sendMail->connect($notifyAdmin);
 $workflow->activate();
-
-// 4. Run it
-$run = $workflow->start([
-    ['name' => 'Alice', 'email' => 'alice@example.com'],
-]);
-// $run->status === 'completed'
+// That's it — every new user gets a welcome email
+// and the admin is notified automatically.
 ```
 
 ## Why Workflow Automation?

@@ -25,7 +25,7 @@ Process incoming orders with VIP detection, per-item stock updates, and branchin
 ## Workflow Diagram
 
 ```text
-                            +-----------------------+
+                                +-----------------------+
                                 |   Manual Trigger      |
                                 |   (new order)         |
                                 +----------+------------+

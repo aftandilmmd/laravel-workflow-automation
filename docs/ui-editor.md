@@ -97,7 +97,7 @@ To disable the visual editor routes entirely:
 
 ```php
 // config/workflow-automation.php
-'ui_routes' => false,
+'editor_routes' => false,
 ```
 
 ### Custom Middleware

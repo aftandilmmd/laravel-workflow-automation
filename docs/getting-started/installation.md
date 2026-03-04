@@ -69,13 +69,13 @@ You should see endpoints for workflows, nodes, edges, runs, and the registry.
 
 ## Visual Editor
 
-The package includes a built-in visual workflow editor at `/workflow-ui`:
+The package includes a built-in visual workflow editor at `/workflow-editor`:
 
 ```txt
 http://your-app.test/workflow-editor
 ```
 
-No extra setup needed — it works out of the box. See the [UI Editor](/ui-editor) docs for details.
+No extra setup needed — it works out of the box. See the [Workflow UI Editor](/ui-editor) docs for details.
 
 ## Next Steps
 

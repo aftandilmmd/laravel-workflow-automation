@@ -40,7 +40,7 @@ Receive product updates from a supplier webhook, loop through each product, and 
                                                          |      |    |
                                                          v      v    v
                                               +----------+-+ +--+--+ (end)
-                                              | Send       | | HTTP |
+                                              | Send        | | HTTP |
                                               | Notification| | retry|
                                               +------------+ +------+
 ```

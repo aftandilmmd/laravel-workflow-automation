@@ -22,7 +22,7 @@ Automatically welcome new users with a tailored email based on how they signed u
 ## Workflow Diagram
 
 ```text
-[User Created] --> [Switch: source]
+[User Created]     -->     [Switch: source]
                         |          |          |
                   case_organic  case_referral  default
                         |          |          |

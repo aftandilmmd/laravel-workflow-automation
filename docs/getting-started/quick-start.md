@@ -6,30 +6,44 @@ Build a working workflow in under 5 minutes.
 
 ## Goal
 
-Create a workflow that sends a welcome email when triggered manually.
+Create a workflow that automatically sends a welcome email and notifies the admin when a new user registers.
+
+::: info Workflows are database records
+Creating a workflow is just inserting rows into the database — a workflow definition, its nodes, and edges. You only need to run this code **once**. After that, the workflow lives in the database and runs automatically based on its trigger.
+
+You can create workflows from anywhere: an Artisan command, a seeder, a migration, a controller, Tinker, or the REST API. The code below is **setup code**, not application code — think of it like a migration that you run once, not a controller action that runs on every request.
+:::
 
 ## Step 1 — Create the Workflow
 
 ```php
+use App\Models\User;
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 
-$workflow = Workflow::create([
-    'name' => 'Welcome Email',
-    'description' => 'Sends a welcome email to new users',
-]);
+$workflow = Workflow::create(['name' => 'Welcome Email']);
 ```
 
 ## Step 2 — Add Nodes
 
 ```php
-// Trigger — receives the initial payload
-$trigger = $workflow->addNode('Start', 'manual');
+// Trigger — fires when a new User is created
+$trigger = $workflow->addNode('User Registered', 'model_event', [
+    'model'  => User::class,
+    'events' => ['created'],
+]);
 
-// Action — sends the email
+// Action — sends a welcome email to the user
 $sendMail = $workflow->addNode('Send Welcome', 'send_mail', [
     'to'      => '{{ item.email }}',
     'subject' => 'Welcome, {{ item.name }}!',
-    'body'    => 'Hi {{ item.name }}, thanks for joining us!',
+    'body'    => 'Thanks for joining us.',
+]);
+
+// Action — notifies the admin about the new signup
+$notifyAdmin = $workflow->addNode('Notify Admin', 'send_notification', [
+    'notification_class'  => \App\Notifications\NewUserSignup::class,
+    'notifiable_model'    => User::class,
+    'notifiable_id_field' => 'id',
 ]);
 ```
 
@@ -39,25 +53,27 @@ The `{{ item.field }}` syntax is the [Expression Engine](/expressions/) — it r
 
 ```php
 $trigger->connect($sendMail);
+$sendMail->connect($notifyAdmin);
 ```
 
-This creates an edge from the trigger's `main` output port to the send mail node's `main` input port.
+Each `connect()` call creates an edge from one node's `main` output port to the next node's `main` input port.
 
-## Step 4 — Activate & Run
+## Step 4 — Activate
 
 ```php
 $workflow->activate();
-
-$run = $workflow->start([
-    ['name' => 'Alice', 'email' => 'alice@example.com'],
-]);
+// That's it — every new user gets a welcome email
+// and the admin is notified automatically.
 ```
 
-The `start()` method accepts an array of items. Each item flows through the graph independently.
+Once activated, the workflow fires automatically whenever a `User` model is created. No manual trigger needed.
 
 ## Step 5 — Check the Result
 
 ```php
+// After a user registers, inspect the run:
+$run = $workflow->runs()->latest()->first();
+
 echo $run->status->value; // "completed"
 
 foreach ($run->nodeRuns as $nodeRun) {
@@ -69,17 +85,18 @@ foreach ($run->nodeRuns as $nodeRun) {
 ## What Happened
 
 ```
-┌──────────┐      ┌───────────────┐
-│  Manual  │─────▶│  Send Welcome │
-│ Trigger  │ main │    (email)    │
-└──────────┘      └───────────────┘
+┌─────────────────┐      ┌───────────────┐      ┌───────────────┐
+│ User Registered │─────▶│  Send Welcome │─────▶│ Notify Admin  │
+│ (model_event)   │ main │  (send_mail)  │ main │(notification) │
+└─────────────────┘      └───────────────┘      └───────────────┘
 ```
 
-1. **Manual Trigger** received `[{name: "Alice", email: "alice@example.com"}]`
+1. A new `User` was created — the **Model Event** trigger fired
 2. Items flowed through the `main` port to **Send Welcome**
-3. The expression engine resolved `{{ item.email }}` to `alice@example.com`
-4. Laravel's Mail facade sent the email
-5. The run completed
+3. The expression engine resolved `{{ item.email }}` to the user's email
+4. Laravel's Mail facade sent the welcome email
+5. Items continued to **Notify Admin** — the admin received a notification
+6. The run completed
 
 ## Using the Facade
 
@@ -142,7 +159,7 @@ curl -X POST /workflow-engine/workflows/1/run \
 
 - [Concepts](/getting-started/concepts) — understand workflows, nodes, edges, items, and execution
 - [Triggers](/triggers/manual) — learn about the 4 trigger types
-- [Nodes](/nodes/send-mail) — explore all 22 built-in nodes
+- [Nodes](/nodes/send-mail) — explore all 25 built-in nodes
 - [Examples](/examples/ecommerce-order) — see real-world workflow patterns
 
 

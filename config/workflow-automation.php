@@ -65,6 +65,7 @@ return [
 
     'routes'          => true,
     'api_routes'      => env('WORKFLOW_API_ROUTES', true),
+    'editor_routes'   => env('WORKFLOW_EDITOR_ROUTES', true),
     'webhook_routes'  => env('WORKFLOW_WEBHOOK_ROUTES', true),
     'prefix'          => env('WORKFLOW_PREFIX', 'workflow-engine'),
     'middleware'      => ['api'],

@@ -50,7 +50,7 @@ if (config('workflow-automation.api_routes', true)) {
 }
 
 // ── UI (SPA catch-all) ──────────────────────────────────────────
-if (config('workflow-automation.ui_routes', true)) {
+if (config('workflow-automation.editor_routes', true)) {
     // Static assets must be registered BEFORE the SPA catch-all
     Route::get('workflow-editor/assets/{file}', function (string $file) {
         $published = public_path("workflow-editor/assets/{$file}");

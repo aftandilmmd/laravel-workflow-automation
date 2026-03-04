@@ -76,11 +76,62 @@ $code = $workflow->addNode('Adults Only', 'code', [
 ]
 ```
 
+## Complex Conditions
+
+The Code node supports full boolean logic with `&&`, `||`, `!`, and parentheses — making it ideal for complex conditional scenarios that would otherwise require chaining multiple IF nodes.
+
+### Nested AND / OR
+
+```php
+// (active AND high-value) OR VIP customer
+$code = $workflow->addNode('Qualified Lead', 'code', [
+    'mode'       => 'filter',
+    'expression' => '{{ (item.status == "active" && item.total > 500) || item.vip == true }}',
+]);
+```
+
+### Multiple field checks with functions
+
+```php
+// Gmail users who signed up in the last 7 days and have verified email
+$code = $workflow->addNode('Recent Gmail Users', 'code', [
+    'mode'       => 'filter',
+    'expression' => '{{ ends_with(item.email, "gmail.com") && date_diff(item.created_at, now(), "days") <= 7 && item.email_verified == true }}',
+]);
+```
+
+### Computed transform with conditions
+
+```php
+// Assign tier based on multiple criteria
+$code = $workflow->addNode('Assign Tier', 'code', [
+    'mode'       => 'transform',
+    'expression' => '{{ item.total > 1000 && item.orders_count > 5 ? "gold" : (item.total > 500 ? "silver" : "bronze") }}',
+]);
+// Output: item + {_result: "gold"}
+```
+
+### Combining array functions with logic
+
+```php
+// Orders with more than 3 line items totaling over $200
+$code = $workflow->addNode('Large Orders', 'code', [
+    'mode'       => 'filter',
+    'expression' => '{{ count(item.line_items) > 3 && sum(pluck(item.line_items, "price")) > 200 }}',
+]);
+```
+
+::: tip When to use Code vs IF Condition
+Use **IF Condition** for simple, single-field checks — it's easier to configure and visually clear in the editor. Use **Code** when you need `&&`, `||`, parentheses, functions, or nested ternaries. Both are safe — no `eval()` is ever used.
+:::
+
 ## Tips
 
 - No `eval()` is used — all expressions run through the safe recursive descent parser
 - Use `item.field` syntax: `{{ item.quantity * item.unit_price }}`
 - Expression errors route to `error` — handle malformed data gracefully
+- Use parentheses to control precedence: `{{ (a || b) && c }}`
+- All [38+ built-in functions](/expressions/) are available in expressions
 
 
 </div>

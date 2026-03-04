@@ -34,7 +34,7 @@ Collect data across multiple form steps using a workflow that pauses between eac
                                                                v
                                                       +--------+---------+
                                                       |  Wait/Resume:    |
-                                                      |  Step 2 — pay   |
+                                                      |  Step 2 — pay    |
                                                       +--------+---------+
                                                                |
                                                                v

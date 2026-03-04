@@ -29,8 +29,8 @@ Receive raw CSV data via webhook, parse it, normalize fields, filter for active 
 ## Workflow Diagram
 
 ```text
-+------------------+     +------------------+     +------------------+
-|  Webhook:        | --> |  Parse Data:     | --> |  Set Fields:     |
+    +------------------+     +------------------+     +------------------+
+    |  Webhook:        | --> |  Parse Data:     | --> |  Set Fields:     |
     |  receive CSV     |     |  CSV format      |     |  normalize       |
     +------------------+     +------------------+     +------------------+
                                                               |

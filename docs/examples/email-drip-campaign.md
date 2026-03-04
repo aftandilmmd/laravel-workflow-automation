@@ -26,7 +26,7 @@ Run a 7-day drip campaign for new signups. A scheduled workflow runs daily, fetc
 
 ```text
     +------------------+     +------------------+     +------------------+
-    |  Schedule:       | --> |  HTTP GET:        | --> |  Loop:           |
+    |  Schedule:       | --> |  HTTP GET:       | --> |  Loop:           |
     |  daily at 9 AM   |     |  fetch signups   |     |  each user       |
     +------------------+     +------------------+     +--------+---------+
                                                                | loop_item

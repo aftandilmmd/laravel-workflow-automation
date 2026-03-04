@@ -74,7 +74,7 @@ A record of one node's execution within a run. Stores input, output, status, dur
 | Category | Count | Purpose | Nodes |
 |----------|-------|---------|-------|
 | **Trigger** | 4 | Start the workflow | Manual, Model Event, Webhook, Schedule |
-| **Action** | 5 | Perform side effects | Send Mail, HTTP Request, Update Model, Dispatch Job, Send Notification |
+| **Action** | 7 | Perform side effects | Send Mail, HTTP Request, Update Model, Dispatch Job, Send Notification, AI, Run Command |
 | **Condition** | 2 | Branch the flow | IF Condition, Switch |
 | **Transformer** | 2 | Reshape data | Set Fields, Parse Data |
 | **Control** | 6 | Control execution | Loop, Merge, Delay, Sub Workflow, Error Handler, Wait/Resume |

@@ -59,8 +59,8 @@ $workflow = Workflow::create(['name' => 'Order Automation']);
 
 // Trigger: fires when an Order is created
 $trigger = $workflow->addNode('Order Created', 'model_event', [
-    'model' => 'App\\Models\\Order',
-    'event' => 'created',
+    'model' => Order::class,
+    'event' => ['created'],
 ]);
 
 // Send confirmation email
@@ -168,7 +168,7 @@ Adding a custom node is one PHP class:
 #[AsWorkflowNode(
     key: 'notify_crm',
     name: 'Notify CRM',
-    type: NodeType::ACTION,
+    type: NodeType::Action,
 )]
 class NotifyCrmNode extends BaseNode
 {

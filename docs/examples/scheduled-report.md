@@ -27,7 +27,7 @@ Generate and email a daily sales report every morning at 8 AM. The workflow fetc
 
 ```text
     +------------------+     +------------------+     +------------------+
-    |  Schedule:       | --> |  HTTP GET:        | --> |  Filter:         |
+    |  Schedule:       | --> |  HTTP GET:       | --> |  Filter:         |
     |  8 AM daily      |     |  fetch sales     |     |  non-zero only   |
     +------------------+     +------------------+     +------------------+
                                                               |
