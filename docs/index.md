@@ -3,7 +3,7 @@ layout: home
 
 hero:
   name: Build Workflows, Not Boilerplate
-  tagline: Stop hardcoding automation in controllers. Design trigger → condition → action flows visually or through code — and let AI agents extend your app without touching a single PHP file.
+  tagline: "Stop hardcoding automation in controllers.\nDesign trigger → condition → action flows visually or through code — and let AI agents extend your app without touching a single PHP file."
   actions:
     - theme: brand
       text: Get Started
