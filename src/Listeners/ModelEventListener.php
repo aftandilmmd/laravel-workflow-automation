@@ -6,6 +6,7 @@ use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Jobs\ExecuteWorkflowJob;
 use Aftandilmmd\WorkflowAutomation\Models\WorkflowNode;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
 
 class ModelEventListener
@@ -25,7 +26,13 @@ class ModelEventListener
                 continue;
             }
 
+            $usesSoftDeletes = in_array(SoftDeletes::class, class_uses_recursive($modelClass));
+
             foreach ($events as $eventName) {
+                if (! $usesSoftDeletes && in_array($eventName, ['restored', 'forceDeleted'])) {
+                    continue;
+                }
+
                 $modelClass::{$eventName}(function (Model $model) use ($trigger, $eventName) {
                     static::handleEvent($model, $trigger, $eventName);
                 });
