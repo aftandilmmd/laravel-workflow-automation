@@ -2,6 +2,7 @@
 
 namespace Aftandilmmd\WorkflowAutomation\Models;
 
+use Aftandilmmd\WorkflowAutomation\Database\Factories\WorkflowEdgeFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class WorkflowEdge extends Model
 {
     use HasFactory;
+
+    protected static function newFactory(): WorkflowEdgeFactory
+    {
+        return WorkflowEdgeFactory::new();
+    }
 
     protected $guarded = [];
 

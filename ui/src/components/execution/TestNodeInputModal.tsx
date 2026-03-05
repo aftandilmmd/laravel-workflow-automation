@@ -6,10 +6,11 @@ interface Props {
   onRun: (payload: Record<string, unknown>) => void
   onClose: () => void
   isRunning: boolean
+  initialPayload?: string
 }
 
-export function TestNodeInputModal({ nodeName, onRun, onClose, isRunning }: Props) {
-  const [payloadText, setPayloadText] = useState('[\n  \n]')
+export function TestNodeInputModal({ nodeName, onRun, onClose, isRunning, initialPayload }: Props) {
+  const [payloadText, setPayloadText] = useState(initialPayload ?? '[\n  \n]')
   const [error, setError] = useState<string | null>(null)
 
   const handleRun = () => {
@@ -46,6 +47,9 @@ export function TestNodeInputModal({ nodeName, onRun, onClose, isRunning }: Prop
         <div className="mt-4">
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Trigger Payload (JSON)
+            {initialPayload && (
+              <span className="ml-2 text-[10px] font-normal text-orange-500">pinned</span>
+            )}
           </label>
           <textarea
             value={payloadText}

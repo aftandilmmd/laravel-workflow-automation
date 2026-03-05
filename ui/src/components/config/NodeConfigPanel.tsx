@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { X, Save, Play, Loader2, Settings, Database } from 'lucide-react'
+import { X, Save, Play, Loader2, Settings, Database, Pin, PinOff } from 'lucide-react'
 import { useWorkflowEditorStore } from '../../stores/useWorkflowEditorStore'
 import { useRunStore } from '../../stores/useRunStore'
 import { nodesApi } from '../../api/nodes'
@@ -13,7 +13,7 @@ import { TestNodeInputModal } from '../execution/TestNodeInputModal'
 type Tab = 'config' | 'output'
 
 export function NodeConfigPanel() {
-  const { workflow, selectedApiNode, selectedRegistryNode, selectNode, updateNodeConfig, updateNodeLabel, setNodeLabel } =
+  const { workflow, selectedApiNode, selectedRegistryNode, selectNode, updateNodeConfig, updateNodeLabel, setNodeLabel, pinNode, unpinNode } =
     useWorkflowEditorStore()
   const { nodeTestResults, isTestingNode, testNode } = useRunStore()
 
@@ -70,6 +70,32 @@ export function NodeConfigPanel() {
     setTab('output')
   }
 
+  const [isPinning, setIsPinning] = useState(false)
+
+  const handlePinOutput = async () => {
+    if (!selectedApiNode || !nodeResult?.output) return
+    setIsPinning(true)
+    try {
+      await pinNode(selectedApiNode.id, {
+        source: 'manual',
+        input: nodeResult.input ? [nodeResult.input] : undefined,
+        output: nodeResult.output as Record<string, unknown[]>,
+      })
+    } finally {
+      setIsPinning(false)
+    }
+  }
+
+  const handleUnpin = async () => {
+    if (!selectedApiNode) return
+    setIsPinning(true)
+    try {
+      await unpinNode(selectedApiNode.id)
+    } finally {
+      setIsPinning(false)
+    }
+  }
+
   if (!selectedApiNode || !selectedRegistryNode) {
     return (
       <div className="flex h-full items-center justify-center p-4 text-center text-sm text-gray-400 dark:text-gray-500">
@@ -79,6 +105,7 @@ export function NodeConfigPanel() {
   }
 
   const nodeResult = nodeTestResults?.[selectedApiNode.id]
+  const pinnedData = selectedApiNode.pinned_data
 
   return (
     <div className="flex h-full flex-col">
@@ -139,6 +166,26 @@ export function NodeConfigPanel() {
         </button>
       </div>
 
+      {/* Pinned Data Banner */}
+      {pinnedData && (pinnedData.input || pinnedData.output) && (
+        <div className="flex items-center justify-between border-b border-orange-200 bg-orange-50 px-4 py-2 dark:border-orange-800 dark:bg-orange-900/20">
+          <div className="flex items-center gap-1.5 text-xs text-orange-700 dark:text-orange-400">
+            <Pin size={12} />
+            <span>
+              Pinned {pinnedData.output ? 'output' : 'input'}
+              {pinnedData.input && pinnedData.output ? ' & input' : ''}
+            </span>
+          </div>
+          <button
+            onClick={handleUnpin}
+            disabled={isPinning}
+            className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-orange-600 hover:bg-orange-100 dark:text-orange-400 dark:hover:bg-orange-900/40"
+          >
+            <PinOff size={10} /> Unpin
+          </button>
+        </div>
+      )}
+
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto px-4 py-3">
         {tab === 'config' ? (
@@ -159,7 +206,13 @@ export function NodeConfigPanel() {
             )}
           </div>
         ) : (
-          <NodeOutputView nodeResult={nodeResult} />
+          <NodeOutputView
+            nodeResult={nodeResult}
+            pinnedData={pinnedData}
+            onPin={handlePinOutput}
+            onUnpin={handleUnpin}
+            isPinning={isPinning}
+          />
         )}
       </div>
 
@@ -199,14 +252,29 @@ export function NodeConfigPanel() {
           onRun={handleTestNode}
           onClose={() => setShowTestModal(false)}
           isRunning={isTestingNode}
+          initialPayload={
+            pinnedData?.input
+              ? JSON.stringify(pinnedData.input, null, 2)
+              : undefined
+          }
         />
       )}
     </div>
   )
 }
 
-function NodeOutputView({ nodeResult }: { nodeResult?: { status: string; input: Record<string, unknown> | null; output: Record<string, unknown> | null; error_message: string | null; duration_ms: number | null } | null }) {
-  if (!nodeResult) {
+interface NodeOutputViewProps {
+  nodeResult?: { status: string; input: Record<string, unknown> | null; output: Record<string, unknown> | null; error_message: string | null; duration_ms: number | null } | null
+  pinnedData?: { input?: unknown[]; output?: Record<string, unknown[]>; source_run_id?: number | null } | null
+  onPin: () => void
+  onUnpin: () => void
+  isPinning: boolean
+}
+
+function NodeOutputView({ nodeResult, pinnedData, onPin, onUnpin, isPinning }: NodeOutputViewProps) {
+  const hasPinned = !!(pinnedData?.input || pinnedData?.output)
+
+  if (!nodeResult && !hasPinned) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <Database size={32} className="mb-3 text-gray-300 dark:text-gray-600" />
@@ -220,32 +288,72 @@ function NodeOutputView({ nodeResult }: { nodeResult?: { status: string; input: 
 
   return (
     <div className="space-y-3">
-      {/* Status */}
-      <div className="flex items-center gap-3">
-        <NodeRunStatusBadge status={nodeResult.status as 'completed' | 'failed' | 'running' | 'pending' | 'skipped'} />
-        {nodeResult.duration_ms != null && (
-          <span className="text-xs text-gray-500 dark:text-gray-400">{nodeResult.duration_ms}ms</span>
-        )}
-      </div>
-
-      {/* Error */}
-      {nodeResult.error_message && (
-        <div className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-900/30 dark:text-red-400">
-          {nodeResult.error_message}
-        </div>
+      {/* Pinned Data Section */}
+      {hasPinned && !nodeResult && (
+        <>
+          {pinnedData?.input && (
+            <div>
+              <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-orange-500">Pinned Input</p>
+              <JsonViewer data={pinnedData.input} maxHeight="200px" />
+            </div>
+          )}
+          {pinnedData?.output && (
+            <div>
+              <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-orange-500">Pinned Output</p>
+              <JsonViewer data={pinnedData.output} maxHeight="300px" />
+            </div>
+          )}
+        </>
       )}
 
-      {/* Input */}
-      <div>
-        <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Input</p>
-        <JsonViewer data={nodeResult.input} maxHeight="200px" />
-      </div>
+      {/* Test Result */}
+      {nodeResult && (
+        <>
+          {/* Status + Pin Button */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <NodeRunStatusBadge status={nodeResult.status as 'completed' | 'failed' | 'running' | 'pending' | 'skipped'} />
+              {nodeResult.duration_ms != null && (
+                <span className="text-xs text-gray-500 dark:text-gray-400">{nodeResult.duration_ms}ms</span>
+              )}
+            </div>
+            {nodeResult.status === 'completed' && nodeResult.output && (
+              <button
+                onClick={hasPinned ? onUnpin : onPin}
+                disabled={isPinning}
+                className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium disabled:opacity-50 ${
+                  hasPinned
+                    ? 'text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/30'
+                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700'
+                }`}
+                title={hasPinned ? 'Unpin test data' : 'Pin this output as test data'}
+              >
+                {hasPinned ? <PinOff size={12} /> : <Pin size={12} />}
+                {hasPinned ? 'Unpin' : 'Pin'}
+              </button>
+            )}
+          </div>
 
-      {/* Output */}
-      <div>
-        <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Output</p>
-        <JsonViewer data={nodeResult.output} maxHeight="300px" />
-      </div>
+          {/* Error */}
+          {nodeResult.error_message && (
+            <div className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-900/30 dark:text-red-400">
+              {nodeResult.error_message}
+            </div>
+          )}
+
+          {/* Input */}
+          <div>
+            <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Input</p>
+            <JsonViewer data={nodeResult.input} maxHeight="200px" />
+          </div>
+
+          {/* Output */}
+          <div>
+            <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Output</p>
+            <JsonViewer data={nodeResult.output} maxHeight="300px" />
+          </div>
+        </>
+      )}
     </div>
   )
 }

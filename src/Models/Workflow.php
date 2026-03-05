@@ -2,6 +2,7 @@
 
 namespace Aftandilmmd\WorkflowAutomation\Models;
 
+use Aftandilmmd\WorkflowAutomation\Database\Factories\WorkflowFactory;
 use Aftandilmmd\WorkflowAutomation\Enums\CreatedVia;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Services\WorkflowService;
@@ -13,6 +14,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Workflow extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected static function newFactory(): WorkflowFactory
+    {
+        return WorkflowFactory::new();
+    }
 
     protected $guarded = [];
 

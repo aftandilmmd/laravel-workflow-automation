@@ -7,11 +7,23 @@ class ExecutionContext
     /** @var array<int, array<string, array<int, array<string, mixed>>>> */
     private array $nodeOutputs = [];
 
+    private bool $testMode = false;
+
     public function __construct(
         public readonly int   $workflowRunId,
         public readonly int   $workflowId,
         public readonly array $initialPayload = [],
     ) {}
+
+    public function enableTestMode(): void
+    {
+        $this->testMode = true;
+    }
+
+    public function isTestMode(): bool
+    {
+        return $this->testMode;
+    }
 
     /**
      * Store a node's output for a specific port.

@@ -274,6 +274,10 @@ class GraphExecutor
             initialPayload: $initialPayload,
         );
 
+        if ($stopAfterNodeId !== null) {
+            $context->enableTestMode();
+        }
+
         // Find and execute trigger node
         $triggerNode = $nodes->firstWhere('type', NodeType::Trigger);
 
@@ -449,6 +453,33 @@ class GraphExecutor
         Collection $nodes,
         ?array $resolvedConfig = null,
     ): NodeOutput {
+        // ── Pinned test data (test mode only) ─────────────────────
+        if ($context->isTestMode() && $node->hasPinnedOutput()) {
+            $pinnedOutput = new NodeOutput($node->getPinnedOutput());
+
+            $nodeRun = WorkflowNodeRun::create([
+                'workflow_run_id' => $run->id,
+                'node_id'         => $node->id,
+                'status'          => NodeRunStatus::Completed,
+                'input'           => $input->items,
+                'output'          => $pinnedOutput->portItems,
+                'executed_at'     => now(),
+                'duration_ms'     => 0,
+            ]);
+
+            event(new NodeExecuted($nodeRun));
+
+            return $pinnedOutput;
+        }
+
+        if ($context->isTestMode() && $node->hasPinnedInput()) {
+            $input = new NodeInput(
+                items: $node->getPinnedInput(),
+                context: $input->context,
+                port: $input->port,
+            );
+        }
+
         $config = $resolvedConfig ?? $node->config ?? [];
 
         $nodeRun = WorkflowNodeRun::create([

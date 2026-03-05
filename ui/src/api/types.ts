@@ -14,6 +14,12 @@ export interface Workflow {
   edges?: WorkflowEdge[]
 }
 
+export interface PinnedData {
+  input?: Record<string, unknown>[]
+  output?: Record<string, Record<string, unknown>[]>
+  source_run_id?: number | null
+}
+
 export interface WorkflowNode {
   id: number
   workflow_id: number
@@ -21,6 +27,7 @@ export interface WorkflowNode {
   node_key: string
   name: string | null
   config: Record<string, unknown> | null
+  pinned_data: PinnedData | null
   position_x: number | null
   position_y: number | null
   created_at: string
