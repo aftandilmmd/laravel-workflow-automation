@@ -27,7 +27,7 @@ This creates `config/workflow-automation.php` where you can customize table name
 php artisan migrate
 ```
 
-This creates five tables:
+This creates six tables:
 
 | Table | Purpose |
 |-------|---------|
@@ -36,6 +36,7 @@ This creates five tables:
 | `workflow_edges` | Connections between nodes |
 | `workflow_runs` | Execution records |
 | `workflow_node_runs` | Per-node execution logs |
+| `workflow_credentials` | Encrypted credential storage |
 
 ::: tip Customizing Table Names
 You can change table names in the config **before** running migrations:
