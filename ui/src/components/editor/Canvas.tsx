@@ -12,7 +12,7 @@ import {
   useReactFlow,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Trash2, LayoutGrid } from 'lucide-react'
+import { Trash2, LayoutGrid, Map, MapPinOff } from 'lucide-react'
 
 import { useWorkflowEditorStore } from '../../stores/useWorkflowEditorStore'
 import { useRegistryStore } from '../../stores/useRegistryStore'
@@ -45,6 +45,7 @@ export function Canvas() {
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
   const { screenToFlowPosition, fitView } = useReactFlow()
   const [edgeMenu, setEdgeMenu] = useState<EdgeContextMenu | null>(null)
+  const [showMiniMap, setShowMiniMap] = useState(() => window.innerWidth >= 768)
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -158,21 +159,30 @@ export function Canvas() {
         className="bg-gray-50 dark:bg-gray-900"
       >
         <Controls position="bottom-left" />
-        <div className="absolute left-2 top-2 z-10">
+        <div className="absolute left-2 top-2 z-10 flex gap-1.5">
           <button
             onClick={onAutoLayout}
             className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
             title="Auto Layout"
           >
             <LayoutGrid size={14} />
-            Auto Layout
+            <span className="hidden md:inline">Auto Layout</span>
+          </button>
+          <button
+            onClick={() => setShowMiniMap((v) => !v)}
+            className={`rounded-md border border-gray-200 bg-white p-1.5 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 ${showMiniMap ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`}
+            title={showMiniMap ? 'Hide mini map' : 'Show mini map'}
+          >
+            {showMiniMap ? <Map size={14} /> : <MapPinOff size={14} />}
           </button>
         </div>
-        <MiniMap
-          position="bottom-right"
-          className="!rounded-lg !border !border-gray-200 dark:!border-gray-700 !shadow-sm dark:!bg-gray-800"
-          maskColor="rgb(240 240 240 / 0.7)"
-        />
+        {showMiniMap && (
+          <MiniMap
+            position="bottom-right"
+            className="!rounded-lg !border !border-gray-200 dark:!border-gray-700 !shadow-sm dark:!bg-gray-800"
+            maskColor="rgb(240 240 240 / 0.7)"
+          />
+        )}
         <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#d1d5db" />
       </ReactFlow>
 
