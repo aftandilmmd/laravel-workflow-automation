@@ -1,3 +1,5 @@
+<div v-pre>
+
 # Custom Nodes
 
 Create your own node types to extend the workflow engine with custom logic.
@@ -381,3 +383,5 @@ class AiClassifyNode extends BaseNode
     }
 }
 ```
+
+</div>
