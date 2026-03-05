@@ -2,6 +2,7 @@
 
 namespace Aftandilmmd\WorkflowAutomation\Models;
 
+use Aftandilmmd\WorkflowAutomation\Database\Factories\WorkflowNodeFactory;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Services\WorkflowService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +14,11 @@ class WorkflowNode extends Model
 {
     use HasFactory;
 
+    protected static function newFactory(): WorkflowNodeFactory
+    {
+        return WorkflowNodeFactory::new();
+    }
+
     protected $guarded = [];
 
     public function getTable(): string
@@ -23,8 +29,9 @@ class WorkflowNode extends Model
     protected function casts(): array
     {
         return [
-            'type'   => NodeType::class,
-            'config' => 'array',
+            'type'        => NodeType::class,
+            'config'      => 'array',
+            'pinned_data' => 'array',
         ];
     }
 
@@ -57,6 +64,28 @@ class WorkflowNode extends Model
             config('workflow-automation.models.node_run', WorkflowNodeRun::class),
             'node_id',
         );
+    }
+
+    // ── Pinned Test Data ───────────────────────────────────────
+
+    public function hasPinnedInput(): bool
+    {
+        return ! empty($this->pinned_data['input']);
+    }
+
+    public function hasPinnedOutput(): bool
+    {
+        return ! empty($this->pinned_data['output']);
+    }
+
+    public function getPinnedInput(): ?array
+    {
+        return $this->pinned_data['input'] ?? null;
+    }
+
+    public function getPinnedOutput(): ?array
+    {
+        return $this->pinned_data['output'] ?? null;
     }
 
     // ── Fluent API ──────────────────────────────────────────────

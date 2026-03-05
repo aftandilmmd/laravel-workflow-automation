@@ -7,6 +7,7 @@ use Aftandilmmd\WorkflowAutomation\Http\Requests\UpdateNodeRequest;
 use Aftandilmmd\WorkflowAutomation\Http\Resources\WorkflowNodeResource;
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 use Aftandilmmd\WorkflowAutomation\Models\WorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Models\WorkflowNodeRun;
 use Aftandilmmd\WorkflowAutomation\Registry\NodeRegistry;
 use Aftandilmmd\WorkflowAutomation\Services\WorkflowService;
 use Illuminate\Http\JsonResponse;
@@ -135,6 +136,44 @@ class WorkflowNodeController extends Controller
             'nodes' => $upstreamNodes,
             'functions' => $this->getAvailableFunctions(),
         ]);
+    }
+
+    public function pin(Request $request, Workflow $workflow, WorkflowNode $node): WorkflowNodeResource
+    {
+        $request->validate([
+            'source'      => ['required', 'string', 'in:run,manual'],
+            'node_run_id' => ['required_if:source,run', 'integer'],
+            'input'       => ['nullable', 'array'],
+            'output'      => ['nullable', 'array'],
+        ]);
+
+        if ($request->input('source') === 'run') {
+            $nodeRun = WorkflowNodeRun::findOrFail($request->integer('node_run_id'));
+
+            abort_unless($nodeRun->node_id === $node->id, 422, 'Node run does not belong to this node.');
+
+            $pinnedData = [
+                'input'         => $nodeRun->input,
+                'output'        => $nodeRun->output,
+                'source_run_id' => $nodeRun->workflow_run_id,
+            ];
+        } else {
+            $pinnedData = array_filter([
+                'input'  => $request->input('input'),
+                'output' => $request->input('output'),
+            ], fn ($v) => $v !== null);
+        }
+
+        $node->update(['pinned_data' => $pinnedData]);
+
+        return new WorkflowNodeResource($node->fresh());
+    }
+
+    public function unpin(Workflow $workflow, WorkflowNode $node): WorkflowNodeResource
+    {
+        $node->update(['pinned_data' => null]);
+
+        return new WorkflowNodeResource($node->fresh());
     }
 
     private function getAvailableFunctions(): array

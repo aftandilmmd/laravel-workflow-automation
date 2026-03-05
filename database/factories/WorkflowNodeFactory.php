@@ -52,4 +52,18 @@ class WorkflowNodeFactory extends Factory
     {
         return $this->state(['config' => $config]);
     }
+
+    public function withPinnedInput(array $input): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'pinned_data' => array_merge($attributes['pinned_data'] ?? [], ['input' => $input]),
+        ]);
+    }
+
+    public function withPinnedOutput(array $output): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'pinned_data' => array_merge($attributes['pinned_data'] ?? [], ['output' => $output]),
+        ]);
+    }
 }

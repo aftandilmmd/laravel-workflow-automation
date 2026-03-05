@@ -16,6 +16,7 @@ class WorkflowNodeResource extends JsonResource
             'node_key'    => $this->node_key,
             'name'        => $this->name,
             'config'      => $this->config,
+            'pinned_data' => $this->pinned_data,
             'position_x'  => $this->position_x,
             'position_y'  => $this->position_y,
             'created_at'  => $this->created_at?->toISOString(),

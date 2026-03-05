@@ -5,7 +5,7 @@ import { NODE_TYPE_COLORS } from '../../lib/constants'
 import { NODE_TYPE_ICON } from './nodeStyles'
 import type { NodeType } from '../../api/types'
 import { useRunStore } from '../../stores/useRunStore'
-import { CheckCircle2, XCircle, Loader2 } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, Pin } from 'lucide-react'
 
 function CustomNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as CustomNodeData
@@ -21,6 +21,7 @@ function CustomNodeComponent({ data, selected }: NodeProps) {
   const isTestingNode = useRunStore((s) => s.isTestingNode)
   const apiNodeId = nodeData.apiNode?.id
   const testResult = apiNodeId && nodeTestResults ? nodeTestResults[apiNodeId] : undefined
+  const hasPinnedData = !!(nodeData.apiNode?.pinned_data?.input || nodeData.apiNode?.pinned_data?.output)
 
   return (
     <div
@@ -28,6 +29,13 @@ function CustomNodeComponent({ data, selected }: NodeProps) {
         selected ? 'ring-2 ring-blue-400' : ''
       }`}
     >
+      {/* Pinned Data Badge */}
+      {hasPinnedData && (
+        <div className="absolute -left-1.5 -top-1.5 z-10" title="Pinned test data">
+          <Pin size={14} className="rounded-full bg-white text-orange-500 dark:bg-gray-800" />
+        </div>
+      )}
+
       {/* Test Status Badge */}
       {(testResult || (isTestingNode && nodeTestResults === null)) && (
         <div className="absolute -right-1.5 -top-1.5 z-10">

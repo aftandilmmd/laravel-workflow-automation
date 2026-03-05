@@ -23,4 +23,10 @@ export const nodesApi = {
 
   availableVariables: (workflowId: number, nodeId: number) =>
     api.get<AvailableVariablesResponse>(`/workflows/${workflowId}/nodes/${nodeId}/variables`),
+
+  pin: (workflowId: number, nodeId: number, data: { source: 'run'; node_run_id: number } | { source: 'manual'; input?: unknown[]; output?: Record<string, unknown[]> }) =>
+    api.post<ApiResponse<WorkflowNode>>(`/workflows/${workflowId}/nodes/${nodeId}/pin`, data),
+
+  unpin: (workflowId: number, nodeId: number) =>
+    api.delete<ApiResponse<WorkflowNode>>(`/workflows/${workflowId}/nodes/${nodeId}/pin`),
 }

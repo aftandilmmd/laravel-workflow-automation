@@ -48,6 +48,9 @@ interface WorkflowEditorStore {
   onNodesChange: OnNodesChange
   onEdgesChange: OnEdgesChange
 
+  pinNode: (nodeId: number, data: { source: 'run'; node_run_id: number } | { source: 'manual'; input?: unknown[]; output?: Record<string, unknown[]> }) => Promise<void>
+  unpinNode: (nodeId: number) => Promise<void>
+
   selectNode: (nodeId: string | null) => void
   reset: () => void
 }
@@ -208,6 +211,36 @@ export const useWorkflowEditorStore = create<WorkflowEditorStore>((set, get) => 
 
   onEdgesChange: (changes) => {
     set({ rfEdges: applyEdgeChanges(changes, get().rfEdges) })
+  },
+
+  pinNode: async (nodeId, data) => {
+    const wf = get().workflow
+    if (!wf) return
+    const res = await nodesApi.pin(wf.id, nodeId, data)
+    const updatedApiNode = res.data
+    set({
+      rfNodes: get().rfNodes.map((n) =>
+        n.id === String(nodeId)
+          ? { ...n, data: { ...n.data, apiNode: updatedApiNode } }
+          : n,
+      ),
+      selectedApiNode: get().selectedNodeId === String(nodeId) ? updatedApiNode : get().selectedApiNode,
+    })
+  },
+
+  unpinNode: async (nodeId) => {
+    const wf = get().workflow
+    if (!wf) return
+    const res = await nodesApi.unpin(wf.id, nodeId)
+    const updatedApiNode = res.data
+    set({
+      rfNodes: get().rfNodes.map((n) =>
+        n.id === String(nodeId)
+          ? { ...n, data: { ...n.data, apiNode: updatedApiNode } }
+          : n,
+      ),
+      selectedApiNode: get().selectedNodeId === String(nodeId) ? updatedApiNode : get().selectedApiNode,
+    })
   },
 
   selectNode: (nodeId) => {

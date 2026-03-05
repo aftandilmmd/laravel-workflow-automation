@@ -2,6 +2,7 @@
 
 namespace Aftandilmmd\WorkflowAutomation\Models;
 
+use Aftandilmmd\WorkflowAutomation\Database\Factories\WorkflowNodeRunFactory;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeRunStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +11,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class WorkflowNodeRun extends Model
 {
     use HasFactory;
+
+    protected static function newFactory(): WorkflowNodeRunFactory
+    {
+        return WorkflowNodeRunFactory::new();
+    }
 
     protected $guarded = [];
 
