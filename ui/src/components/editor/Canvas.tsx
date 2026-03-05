@@ -18,6 +18,7 @@ import { useWorkflowEditorStore } from '../../stores/useWorkflowEditorStore'
 import { useRegistryStore } from '../../stores/useRegistryStore'
 import { useAutoSavePosition } from '../../hooks/useAutoSavePosition'
 import { CustomNode } from '../nodes/CustomNode'
+import { ConfirmDialog } from '../shared/ConfirmDialog'
 
 const nodeTypes = { custom: CustomNode }
 
@@ -46,6 +47,7 @@ export function Canvas() {
   const { screenToFlowPosition, fitView } = useReactFlow()
   const [edgeMenu, setEdgeMenu] = useState<EdgeContextMenu | null>(null)
   const [showMiniMap, setShowMiniMap] = useState(false)
+  const [showLayoutConfirm, setShowLayoutConfirm] = useState(false)
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -122,10 +124,6 @@ export function Canvas() {
     [],
   )
 
-  const onAutoLayout = useCallback(async () => {
-    await autoLayout()
-    window.requestAnimationFrame(() => fitView({ padding: 0.2 }))
-  }, [autoLayout, fitView])
 
   const onPaneClick = useCallback(() => {
     setEdgeMenu(null)
@@ -162,7 +160,7 @@ export function Canvas() {
         <Controls position="bottom-left" />
         <div className="absolute left-2 top-2 z-10 flex gap-1.5">
           <button
-            onClick={onAutoLayout}
+            onClick={() => setShowLayoutConfirm(true)}
             className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 shadow-sm hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
             title="Auto Layout"
           >
@@ -204,6 +202,20 @@ export function Canvas() {
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showLayoutConfirm}
+        title="Auto Layout"
+        message="This will rearrange all nodes automatically. Your current manual layout will be lost."
+        confirmLabel="Rearrange"
+        variant="primary"
+        onConfirm={async () => {
+          setShowLayoutConfirm(false)
+          await autoLayout()
+          window.requestAnimationFrame(() => fitView({ padding: 0.2 }))
+        }}
+        onCancel={() => setShowLayoutConfirm(false)}
+      />
     </div>
   )
 }
