@@ -43,7 +43,7 @@ class ListRunsTool extends Tool
             'finished_at' => $run->finished_at,
         ])->all();
 
-        return Response::structured([
+        return Response::json([
             'items' => $items,
             'pagination' => [
                 'current_page' => $paginator->currentPage(),

@@ -30,7 +30,7 @@ class GetRunTool extends Tool
         $run = WorkflowRun::with('nodeRuns.node')
             ->findOrFail($request->get('run_id'));
 
-        return Response::structured([
+        return Response::json([
             'id' => $run->id,
             'workflow_id' => $run->workflow_id,
             'status' => $run->status->value,

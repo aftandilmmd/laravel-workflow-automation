@@ -41,7 +41,7 @@ class UpdateNodeTool extends Tool
 
         $node->update($data);
 
-        return Response::structured([
+        return Response::json([
             'id' => $node->id,
             'workflow_id' => $node->workflow_id,
             'name' => $node->name,

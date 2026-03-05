@@ -27,6 +27,6 @@ class ListCredentialTypesTool extends Tool
     {
         $registry = app(CredentialTypeRegistry::class);
 
-        return Response::structured(['types' => $registry->all()]);
+        return Response::json(['types' => $registry->all()]);
     }
 }

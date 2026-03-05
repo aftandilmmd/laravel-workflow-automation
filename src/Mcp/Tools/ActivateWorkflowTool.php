@@ -31,7 +31,7 @@ class ActivateWorkflowTool extends Tool
     {
         $workflow = $this->service->activate($request->get('workflow_id'));
 
-        return Response::structured([
+        return Response::json([
             'workflow' => [
                 'id' => $workflow->id,
                 'name' => $workflow->name,

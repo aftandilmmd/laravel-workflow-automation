@@ -40,7 +40,7 @@ class ShowNodeTypeTool extends Tool
         $meta = $this->registry->getMeta($key);
         $node = $this->registry->resolve($key);
 
-        return Response::structured([
+        return Response::json([
             'key' => $key,
             'label' => $meta['label'],
             'type' => $meta['type']->value,

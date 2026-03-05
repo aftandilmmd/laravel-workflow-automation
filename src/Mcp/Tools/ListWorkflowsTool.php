@@ -43,7 +43,7 @@ class ListWorkflowsTool extends Tool
             'edges_count' => $w->edges_count,
         ])->all();
 
-        return Response::structured([
+        return Response::json([
             'items' => $items,
             'pagination' => [
                 'current_page' => $paginator->currentPage(),

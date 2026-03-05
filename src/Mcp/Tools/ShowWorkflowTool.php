@@ -30,7 +30,7 @@ class ShowWorkflowTool extends Tool
         $workflow = Workflow::with(['nodes', 'edges'])
             ->findOrFail($request->get('workflow_id'));
 
-        return Response::structured([
+        return Response::json([
             'workflow' => [
                 'id' => $workflow->id,
                 'name' => $workflow->name,

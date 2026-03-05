@@ -91,7 +91,7 @@ class GetAvailableVariablesTool extends Tool
             ];
         }
 
-        return Response::structured([
+        return Response::json([
             'globals' => [
                 ['path' => 'item', 'type' => 'object', 'label' => 'Current Item'],
                 ['path' => 'payload', 'type' => 'object', 'label' => 'Initial Payload'],
