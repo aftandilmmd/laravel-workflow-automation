@@ -29,6 +29,6 @@ class ListNodeTypesTool extends Tool
 
     public function handle(Request $request): Response
     {
-        return Response::structured($this->registry->all());
+        return Response::json($this->registry->all());
     }
 }

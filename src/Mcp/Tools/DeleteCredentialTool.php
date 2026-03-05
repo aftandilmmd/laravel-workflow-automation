@@ -28,7 +28,7 @@ class DeleteCredentialTool extends Tool
         $credential = WorkflowCredential::findOrFail($request->get('credential_id'));
         $credential->delete();
 
-        return Response::structured([
+        return Response::json([
             'deleted' => true,
             'id'      => $credential->id,
         ]);

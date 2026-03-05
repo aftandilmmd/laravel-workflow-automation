@@ -33,7 +33,7 @@ class CreateCredentialTool extends Tool
             'data' => $request->get('data'),
         ]);
 
-        return Response::structured([
+        return Response::json([
             'id'   => $credential->id,
             'name' => $credential->name,
             'type' => $credential->type,

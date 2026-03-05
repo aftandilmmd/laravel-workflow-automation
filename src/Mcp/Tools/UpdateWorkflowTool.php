@@ -38,7 +38,7 @@ class UpdateWorkflowTool extends Tool
 
         $workflow = $this->service->update($request->get('workflow_id'), $data);
 
-        return Response::structured([
+        return Response::json([
             'workflow' => [
                 'id' => $workflow->id,
                 'name' => $workflow->name,

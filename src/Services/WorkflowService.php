@@ -249,6 +249,10 @@ class WorkflowService
 
     public function removeNode(int $nodeId): void
     {
+        WorkflowEdge::where('source_node_id', $nodeId)
+            ->orWhere('target_node_id', $nodeId)
+            ->delete();
+
         WorkflowNode::findOrFail($nodeId)->delete();
     }
 

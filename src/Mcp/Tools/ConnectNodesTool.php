@@ -39,7 +39,7 @@ class ConnectNodesTool extends Tool
             $request->get('target_port', 'main'),
         );
 
-        return Response::structured([
+        return Response::json([
             'id' => $edge->id,
             'workflow_id' => $edge->workflow_id,
             'source_node_id' => $edge->source_node_id,

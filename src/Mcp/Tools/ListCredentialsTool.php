@@ -35,6 +35,6 @@ class ListCredentialsTool extends Tool
             ])
             ->all();
 
-        return Response::structured(['items' => $credentials]);
+        return Response::json(['items' => $credentials]);
     }
 }

@@ -34,9 +34,26 @@ class WorkflowBuilderPrompt extends Prompt
     public function handle(Request $request): array
     {
         $nodes = $this->registry->all();
-        $nodeList = $this->buildNodeList($nodes);
+        $system = self::buildSystemPromptText($nodes);
 
-        $system = <<<PROMPT
+        $messages = [
+            Response::text($system)->asAssistant(),
+        ];
+
+        $goal = $request->get('goal');
+
+        if ($goal) {
+            $messages[] = Response::text("Build a workflow that: {$goal}");
+        }
+
+        return $messages;
+    }
+
+    public static function buildSystemPromptText(array $registryNodes): string
+    {
+        $nodeList = self::buildNodeList($registryNodes);
+
+        return <<<PROMPT
         You are building workflows for a Laravel application using a graph-based workflow automation engine. Workflows are directed graphs where nodes perform actions and edges define execution order. Each workflow needs at least one trigger node.
 
         ## Available Node Types
@@ -71,40 +88,38 @@ class WorkflowBuilderPrompt extends Prompt
         - Math: +, -, *, /, %
         - Functions: upper(), lower(), length(), join(), split(), trim(), abs(), round(), now(), date_format(), contains(), starts_with(), ends_with(), default()
 
-        ## Step-by-Step Process
+        ## Config Field Types
 
-        1. **create_workflow** — Create a new workflow with a name and optional description
-        2. **add_node** — Add the trigger node first (e.g. manual, model_event, webhook, schedule)
-        3. **add_node** — Add action, condition, transformer, control, and utility nodes as needed
-        4. **connect_nodes** — Connect nodes by specifying source node, source port, target node, and target port
-        5. **validate_workflow** — Always validate to catch missing connections, cycles, or config errors
-        6. **activate_workflow** — Activate only after validation passes
+        - `string`: plain text value, if `supports_expression` is true you can use `{{ item.field }}` syntax
+        - `select`: choose one value from the `options` list
+        - `multiselect`: choose multiple values from `options` (pass as array)
+        - `model_select`: a fully-qualified Laravel model class name, e.g. `"App\\Models\\User"`, `"App\\Models\\Order"`
+        - `boolean`: true or false
+        - `integer`: a number
+        - `json`: a JSON string or object
+        - `textarea`: multi-line text (supports expressions if marked)
+        - `keyvalue`: an object of key-value pairs, e.g. `{"Content-Type": "application/json"}`
+        - `array`: an array of strings
+        - `code`: an expression string (NOT raw PHP), e.g. `"{{ item.price * item.quantity }}"`
+        - `expression`: an expression string using `{{ }}` syntax
 
         ## Best Practices
 
-        - Always run validate_workflow before activate_workflow
-        - Use list_node_types to discover available nodes and show_node_type to inspect a node's config schema
         - Give nodes meaningful names that describe their purpose
         - Every workflow must start with exactly one trigger node
         - Connect the "error" port to an error_handler node for robust workflows
         - Use set_fields to reshape data between nodes when needed
         - For conditional branching, prefer if_condition for binary choices and switch for multiple cases
+        - Use expressions like {{ node.{node_id}.main.0.field }} to reference output from upstream nodes
+        - IMPORTANT: Always fill in required config fields when adding nodes. Never leave required fields empty.
+        - For model_event triggers: always set `model` to a fully-qualified class like `"App\\Models\\User"` and `events` to an array like `["created"]`, `["updated"]`, etc.
+        - For send_mail: always set `send_mode` to `"inline"` (or `"mailable"`), plus `to`, `subject`, `body` fields
+        - For http_request: always set `url` and `method`
+        - For if_condition: always set `field` (an expression), `operator` (e.g. `"=="`, `"!="`, `">"`, `"contains"`), and optionally `value`
         PROMPT;
-
-        $messages = [
-            Response::text($system)->asAssistant(),
-        ];
-
-        $goal = $request->get('goal');
-
-        if ($goal) {
-            $messages[] = Response::text("Build a workflow that: {$goal}");
-        }
-
-        return $messages;
     }
 
-    protected function buildNodeList(array $nodes): string
+    protected static function buildNodeList(array $nodes): string
     {
         $categories = [
             'trigger' => [],
@@ -119,7 +134,21 @@ class WorkflowBuilderPrompt extends Prompt
         foreach ($nodes as $node) {
             $type = $node['type'];
             $ports = implode(', ', $node['output_ports']);
-            $categories[$type][] = "  - {$node['key']} ({$node['label']}) — outputs: {$ports}";
+            $line = "  - **{$node['key']}** ({$node['label']}) — outputs: {$ports}";
+
+            // Add config schema details
+            $configFields = self::formatConfigSchema($node['config_schema'] ?? []);
+            if ($configFields) {
+                $line .= "\n    Config: {$configFields}";
+            }
+
+            // Add output schema details
+            $outputFields = self::formatOutputSchema($node['output_schema'] ?? []);
+            if ($outputFields) {
+                $line .= "\n    Output: {$outputFields}";
+            }
+
+            $categories[$type][] = $line;
         }
 
         $sections = [];
@@ -134,5 +163,59 @@ class WorkflowBuilderPrompt extends Prompt
         }
 
         return implode("\n\n", $sections);
+    }
+
+    protected static function formatConfigSchema(array $schema): string
+    {
+        if (empty($schema)) {
+            return '';
+        }
+
+        $fields = [];
+
+        foreach ($schema as $field) {
+            if (($field['key'] ?? '') === 'credential_id') {
+                continue;
+            }
+
+            $key = $field['key'] ?? '';
+            $type = $field['type'] ?? 'string';
+            $required = ! empty($field['required']) ? ', required' : '';
+            $label = $field['label'] ?? '';
+
+            $parts = ["{$type}{$required}"];
+
+            if (! empty($field['options'])) {
+                $parts[] = 'options: ' . implode('|', array_slice($field['options'], 0, 10));
+            }
+
+            if (! empty($field['supports_expression'])) {
+                $parts[] = 'expr';
+            }
+
+            if ($label && $label !== $key) {
+                $parts[] = $label;
+            }
+
+            $fields[] = "`{$key}` (" . implode(', ', $parts) . ')';
+        }
+
+        return implode(', ', $fields);
+    }
+
+    protected static function formatOutputSchema(array $schema): string
+    {
+        if (empty($schema)) {
+            return '';
+        }
+
+        $parts = [];
+
+        foreach ($schema as $port => $fields) {
+            $fieldNames = array_map(fn ($f) => "`{$f['key']}`", $fields);
+            $parts[] = "{$port}: " . implode(', ', $fieldNames);
+        }
+
+        return implode('; ', $parts);
     }
 }

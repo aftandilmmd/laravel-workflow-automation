@@ -31,7 +31,7 @@ class DeactivateWorkflowTool extends Tool
     {
         $workflow = $this->service->deactivate($request->get('workflow_id'));
 
-        return Response::structured([
+        return Response::json([
             'workflow' => [
                 'id' => $workflow->id,
                 'name' => $workflow->name,

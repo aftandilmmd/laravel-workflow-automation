@@ -33,7 +33,7 @@ class ValidateWorkflowTool extends Tool
     {
         $errors = $this->service->validate($request->get('workflow_id'));
 
-        return Response::structured([
+        return Response::json([
             'valid' => empty($errors),
             'errors' => $errors,
         ]);

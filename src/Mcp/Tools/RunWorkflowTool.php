@@ -37,7 +37,7 @@ class RunWorkflowTool extends Tool
 
         $run->load('nodeRuns.node');
 
-        return Response::structured([
+        return Response::json([
             'id' => $run->id,
             'workflow_id' => $run->workflow_id,
             'status' => $run->status->value,

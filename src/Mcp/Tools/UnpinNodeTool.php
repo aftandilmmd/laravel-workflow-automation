@@ -30,7 +30,7 @@ class UnpinNodeTool extends Tool
         $node->update(['pinned_data' => null]);
         $node->refresh();
 
-        return Response::structured([
+        return Response::json([
             'id' => $node->id,
             'workflow_id' => $node->workflow_id,
             'name' => $node->name,

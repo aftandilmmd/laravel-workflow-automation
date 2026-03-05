@@ -188,6 +188,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | AI Builder
+    |--------------------------------------------------------------------------
+    |
+    | Settings for the AI-powered workflow builder chat. Uses laravel/ai to
+    | generate nodes and edges from natural-language prompts.
+    |
+    | 'enabled'          — Enable / disable the AI builder endpoint.
+    | 'default_provider' — Default provider when not selected by the user.
+    | 'default_model'    — Default model when not selected by the user.
+    | 'max_steps'        — Maximum agentic tool-call loops per request.
+    |
+    */
+
+    'ai_builder' => [
+        'enabled'          => env('WORKFLOW_AI_BUILDER_ENABLED', true),
+        'default_provider' => env('WORKFLOW_AI_BUILDER_PROVIDER', 'openai'),
+        'default_model'    => env('WORKFLOW_AI_BUILDER_MODEL', 'gpt-4o'),
+        'max_steps'        => 25,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Log Retention
     |--------------------------------------------------------------------------
     |

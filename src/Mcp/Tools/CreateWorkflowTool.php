@@ -35,7 +35,7 @@ class CreateWorkflowTool extends Tool
             'description' => $request->get('description'),
         ]);
 
-        return Response::structured([
+        return Response::json([
             'workflow' => [
                 'id' => $workflow->id,
                 'name' => $workflow->name,

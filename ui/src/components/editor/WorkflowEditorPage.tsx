@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -11,6 +11,7 @@ import {
   Sun,
   Moon,
   Menu,
+  Bot,
 } from 'lucide-react'
 import { ReactFlowProvider } from '@xyflow/react'
 
@@ -18,6 +19,7 @@ import { useWorkflowEditorStore } from '../../stores/useWorkflowEditorStore'
 import { useRegistryStore } from '../../stores/useRegistryStore'
 import { useRunStore } from '../../stores/useRunStore'
 import { useThemeStore } from '../../stores/useThemeStore'
+import { useAiBuilderStore } from '../../stores/useAiBuilderStore'
 import { workflowsApi } from '../../api/workflows'
 import { Canvas } from './Canvas'
 import { ExportDropdown } from './ExportDropdown'
@@ -27,16 +29,18 @@ import { RunHistoryPanel } from '../runs/RunHistoryPanel'
 import { ExecuteModal } from '../execution/ExecuteModal'
 import { LoadingSpinner } from '../shared/LoadingSpinner'
 import { ConfirmDialog } from '../shared/ConfirmDialog'
+import { AiBuilderPanel } from '../ai-builder/AiBuilderPanel'
 
 type SidebarTab = 'palette' | 'runs'
 
 export function WorkflowEditorPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { workflow, isLoading, loadWorkflow, reset, selectedNodeId } = useWorkflowEditorStore()
+  const { workflow, isLoading, loadWorkflow, reset, selectedNodeId, selectNode, autoLayout } = useWorkflowEditorStore()
   const { fetchRegistry } = useRegistryStore()
   const { fetchRuns } = useRunStore()
   const { theme, toggle: toggleTheme } = useThemeStore()
+  const aiBuilder = useAiBuilderStore()
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('palette')
   const [showExecute, setShowExecute] = useState(false)
   const [isDuplicating, setIsDuplicating] = useState(false)
@@ -52,12 +56,20 @@ export function WorkflowEditorPage() {
       }
     }
     init()
-    return () => reset()
+    return () => {
+      reset()
+      aiBuilder.close()
+      aiBuilder.reset()
+    }
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Node selected → close AI panel; AI opened → deselect node
   useEffect(() => {
+    if (selectedNodeId && aiBuilder.isOpen) {
+      aiBuilder.close()
+    }
     setMobileRightOpen(!!selectedNodeId)
-  }, [selectedNodeId])
+  }, [selectedNodeId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleToggleActive = async () => {
     if (!workflow) return
@@ -68,6 +80,13 @@ export function WorkflowEditorPage() {
     }
     loadWorkflow(workflow.id, useRegistryStore.getState().getByKey)
   }
+
+  const handleAiStreamDone = useCallback(() => {
+    if (!workflow) return
+    loadWorkflow(workflow.id, useRegistryStore.getState().getByKey).then(() => {
+      setTimeout(() => autoLayout(), 200)
+    })
+  }, [workflow, loadWorkflow, autoLayout])
 
   const handleDuplicate = async () => {
     if (!workflow || isDuplicating) return
@@ -122,6 +141,25 @@ export function WorkflowEditorPage() {
             title={theme === 'light' ? 'Dark mode' : 'Light mode'}
           >
             {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+          </button>
+          <button
+            onClick={() => {
+              if (aiBuilder.isOpen) {
+                aiBuilder.close()
+              } else {
+                selectNode(null)
+                aiBuilder.open()
+              }
+            }}
+            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium ${
+              aiBuilder.isOpen
+                ? 'bg-purple-600 text-white'
+                : 'text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-900/30'
+            }`}
+            title="AI Builder"
+          >
+            <Bot size={14} />
+            <span className="hidden md:inline">AI</span>
           </button>
           <div className="hidden md:flex items-center gap-2">
             <ExportDropdown workflow={workflow} />
@@ -210,7 +248,7 @@ export function WorkflowEditorPage() {
         </div>
 
         {/* Right Panel (Config) — static on desktop, drawer on mobile */}
-        {selectedNodeId && (
+        {selectedNodeId && !aiBuilder.isOpen && (
           <>
             {mobileRightOpen && (
               <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setMobileRightOpen(false)} />
@@ -224,6 +262,13 @@ export function WorkflowEditorPage() {
               <NodeConfigPanel />
             </div>
           </>
+        )}
+
+        {/* AI Builder Panel */}
+        {aiBuilder.isOpen && (
+          <div className="w-80 shrink-0 border-l border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <AiBuilderPanel workflowId={workflow.id} onStreamDone={handleAiStreamDone} />
+          </div>
         )}
       </div>
 

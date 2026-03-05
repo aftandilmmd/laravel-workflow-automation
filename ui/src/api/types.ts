@@ -180,6 +180,21 @@ export interface UpdateCredentialPayload {
   meta?: Record<string, unknown>
 }
 
+// ── AI Builder ──
+
+export interface AiBuilderMessage {
+  role: 'user' | 'assistant'
+  content: string
+  toolCalls?: AiToolCall[]
+}
+
+export interface AiToolCall {
+  name: string
+  args: Record<string, unknown>
+  toolId?: string
+  result?: string
+}
+
 // ── Request Payloads ──
 
 export interface CreateWorkflowPayload {

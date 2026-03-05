@@ -1,5 +1,6 @@
 <?php
 
+use Aftandilmmd\WorkflowAutomation\Http\Controllers\AiBuilderController;
 use Aftandilmmd\WorkflowAutomation\Http\Controllers\CredentialController;
 use Aftandilmmd\WorkflowAutomation\Http\Controllers\MetadataController;
 use Aftandilmmd\WorkflowAutomation\Http\Controllers\NodeRegistryController;
@@ -26,6 +27,7 @@ if (config('workflow-automation.api_routes', true)) {
             Route::post('workflows/{workflow}/duplicate', [WorkflowController::class, 'duplicate']);
             Route::post('workflows/{workflow}/validate', [WorkflowController::class, 'validateWorkflow']);
             Route::post('workflows/{workflow}/test-node', [WorkflowRunController::class, 'testNode']);
+            Route::post('workflows/{workflow}/ai-build', [AiBuilderController::class, 'build']);
 
             // ── Nodes ────────────────────────────────────────────────
             Route::post('workflows/{workflow}/nodes', [WorkflowNodeController::class, 'store']);
