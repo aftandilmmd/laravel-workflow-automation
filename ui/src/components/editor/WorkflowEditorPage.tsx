@@ -47,6 +47,7 @@ export function WorkflowEditorPage() {
   const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false)
   const [mobileLeftOpen, setMobileLeftOpen] = useState(false)
   const [mobileRightOpen, setMobileRightOpen] = useState(false)
+  const [configTab, setConfigTab] = useState<'config' | 'output' | 'docs'>('config')
 
   useEffect(() => {
     const init = async () => {
@@ -255,11 +256,12 @@ export function WorkflowEditorPage() {
             )}
             <div className={`
               border-l border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800
-              fixed top-12 bottom-0 right-0 z-40 w-[85vw] max-w-sm transition-transform duration-200
+              fixed top-12 bottom-0 right-0 z-40 w-[85vw] max-w-sm transition-all duration-200
               ${mobileRightOpen ? 'translate-x-0' : 'translate-x-full'}
-              md:relative md:top-auto md:bottom-auto md:z-auto md:w-80 md:max-w-none md:shrink-0 md:translate-x-0 md:transition-none
+              md:relative md:top-auto md:bottom-auto md:z-auto md:max-w-none md:shrink-0 md:translate-x-0 md:transition-[width] md:duration-200
+              ${configTab === 'docs' ? 'md:w-xl' : 'md:w-80'}
             `}>
-              <NodeConfigPanel />
+              <NodeConfigPanel onTabChange={setConfigTab} />
             </div>
           </>
         )}
