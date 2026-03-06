@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { X, Save, Play, Loader2, Settings, Database, Pin, PinOff } from 'lucide-react'
+import { X, Save, Play, Loader2, Settings, Database, Pin, PinOff, BookOpen } from 'lucide-react'
 import { useWorkflowEditorStore } from '../../stores/useWorkflowEditorStore'
 import { useRunStore } from '../../stores/useRunStore'
 import { nodesApi } from '../../api/nodes'
@@ -9,10 +9,15 @@ import { VariablePanel } from './VariablePanel'
 import { JsonViewer } from '../shared/JsonViewer'
 import { NodeRunStatusBadge } from '../shared/StatusBadge'
 import { TestNodeInputModal } from '../execution/TestNodeInputModal'
+import { MarkdownRenderer } from '../shared/MarkdownRenderer'
 
-type Tab = 'config' | 'output'
+type Tab = 'config' | 'output' | 'docs'
 
-export function NodeConfigPanel() {
+interface NodeConfigPanelProps {
+  onTabChange?: (tab: Tab) => void
+}
+
+export function NodeConfigPanel({ onTabChange }: NodeConfigPanelProps) {
   const { workflow, selectedApiNode, selectedRegistryNode, selectNode, updateNodeConfig, updateNodeLabel, setNodeLabel, setNodeConfig, pinNode, unpinNode } =
     useWorkflowEditorStore()
   const { nodeTestResults, isTestingNode, testNode } = useRunStore()
@@ -21,7 +26,11 @@ export function NodeConfigPanel() {
   const [localLabel, setLocalLabel] = useState('')
   const [isDirty, setIsDirty] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [tab, setTab] = useState<Tab>('config')
+  const [tab, setTabState] = useState<Tab>('config')
+  const setTab = useCallback((t: Tab) => {
+    setTabState(t)
+    onTabChange?.(t)
+  }, [onTabChange])
   const [showTestModal, setShowTestModal] = useState(false)
   const [variables, setVariables] = useState<AvailableVariablesResponse | null>(null)
 
@@ -113,6 +122,7 @@ export function NodeConfigPanel() {
   const isAnnotation = selectedApiNode.type === 'annotation'
   const nodeResult = nodeTestResults?.[selectedApiNode.id]
   const pinnedData = selectedApiNode.pinned_data
+  const docContent = isAnnotation ? null : selectedRegistryNode.documentation
 
   return (
     <div className="flex h-full flex-col">
@@ -172,6 +182,18 @@ export function NodeConfigPanel() {
               />
             )}
           </button>
+          {docContent && (
+            <button
+              onClick={() => setTab('docs')}
+              className={`flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium ${
+                tab === 'docs'
+                  ? 'border-b-2 border-blue-600 text-blue-600'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              <BookOpen size={12} /> Docs
+            </button>
+          )}
         </div>
       )}
 
@@ -214,6 +236,8 @@ export function NodeConfigPanel() {
               </div>
             )}
           </div>
+        ) : tab === 'docs' && docContent ? (
+          <MarkdownRenderer markdown={docContent} />
         ) : (
           <NodeOutputView
             nodeResult={nodeResult}
@@ -238,7 +262,7 @@ export function NodeConfigPanel() {
               {isSaving ? 'Saving...' : 'Save'}
             </button>
           )}
-          {!isAnnotation && (
+          {!isAnnotation && tab !== 'docs' && (
             <button
               onClick={() => setShowTestModal(true)}
               disabled={isTestingNode}
