@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Upload, AlertCircle, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import type { ExportedWorkflow } from '../../lib/exportWorkflow'
 import type { Workflow, RegistryNode } from '../../api/types'
@@ -104,7 +105,7 @@ export function ImportWorkflowModal({
     }
   }, [parsedData, hasErrors, importName, onImported])
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800 dark:shadow-2xl dark:shadow-black/40">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Import Workflow</h2>
@@ -222,6 +223,7 @@ export function ImportWorkflowModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

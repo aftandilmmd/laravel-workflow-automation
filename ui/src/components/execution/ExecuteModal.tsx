@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Play } from 'lucide-react'
 import { workflowsApi } from '../../api/workflows'
 
@@ -51,7 +52,7 @@ export function ExecuteModal({ workflowId, onClose, onExecuted }: Props) {
     }
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800 dark:shadow-2xl dark:shadow-black/40">
         <div className="flex items-center justify-between">
@@ -104,6 +105,7 @@ export function ExecuteModal({ workflowId, onClose, onExecuted }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

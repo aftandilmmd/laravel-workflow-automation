@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { Credential, CredentialType } from '../../api/types'
 import { credentialsApi } from '../../api/credentials'
 import { DynamicForm } from '../config/DynamicForm'
@@ -43,7 +44,7 @@ export function CredentialModal({ allowedTypes, credentialTypes, onClose, onCrea
     }
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800 dark:shadow-2xl dark:shadow-black/40">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">New Credential</h3>
@@ -106,6 +107,7 @@ export function CredentialModal({ allowedTypes, credentialTypes, onClose, onCrea
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
