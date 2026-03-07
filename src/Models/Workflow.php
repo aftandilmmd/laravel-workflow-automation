@@ -8,6 +8,8 @@ use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Services\WorkflowService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -55,6 +57,24 @@ class Workflow extends Model
     {
         return $this->hasMany(
             config('workflow-automation.models.run', WorkflowRun::class),
+        );
+    }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            config('workflow-automation.models.tag', WorkflowTag::class),
+            config('workflow-automation.tables.tag_pivot', 'workflow_tag_pivot'),
+            'workflow_id',
+            'tag_id',
+        );
+    }
+
+    public function folder(): BelongsTo
+    {
+        return $this->belongsTo(
+            config('workflow-automation.models.folder', WorkflowFolder::class),
+            'folder_id',
         );
     }
 

@@ -25,15 +25,25 @@ class CreateWorkflowTool extends Tool
         return [
             'name' => $schema->string()->required()->description('Workflow name'),
             'description' => $schema->string()->description('Workflow description'),
+            'folder_id' => $schema->integer()->description('Folder ID to place the workflow in'),
+            'tag_ids' => $schema->array()->description('Array of tag IDs to assign'),
         ];
     }
 
     public function handle(Request $request): Response
     {
-        $workflow = $this->service->create([
+        $data = array_filter([
             'name' => $request->get('name'),
             'description' => $request->get('description'),
-        ]);
+            'folder_id' => $request->get('folder_id'),
+        ], fn ($v) => ! is_null($v));
+
+        $workflow = $this->service->create($data);
+
+        if ($tagIds = $request->get('tag_ids')) {
+            $workflow->tags()->sync($tagIds);
+            $workflow->load('tags');
+        }
 
         return Response::json([
             'workflow' => [
@@ -41,6 +51,8 @@ class CreateWorkflowTool extends Tool
                 'name' => $workflow->name,
                 'description' => $workflow->description,
                 'is_active' => $workflow->is_active,
+                'folder_id' => $workflow->folder_id,
+                'tags' => ($workflow->tags ?? collect())->map(fn ($t) => ['id' => $t->id, 'name' => $t->name])->all(),
             ],
         ]);
     }

@@ -27,8 +27,19 @@ class WorkflowController extends Controller
         $sortDir = $request->input('direction') === 'asc' ? 'asc' : 'desc';
 
         $workflows = Workflow::query()
+            ->with(['tags', 'folder'])
             ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%'.$request->string('search').'%'))
             ->when($request->boolean('active_only'), fn ($q) => $q->where('is_active', true))
+            ->when($request->filled('folder_id'), fn ($q) => $q->where('folder_id', $request->integer('folder_id')))
+            ->when($request->boolean('uncategorized'), fn ($q) => $q->whereNull('folder_id'))
+            ->when($request->filled('tag'), function ($q) use ($request) {
+                $tags = is_array($request->input('tag')) ? $request->input('tag') : [$request->input('tag')];
+                $q->whereHas('tags', fn ($t) => $t->whereIn('name', $tags));
+            })
+            ->when($request->filled('tag_id'), function ($q) use ($request) {
+                $tagIds = is_array($request->input('tag_id')) ? $request->input('tag_id') : [$request->input('tag_id')];
+                $q->whereHas('tags', fn ($t) => $t->whereIn($t->getModel()->getTable().'.id', $tagIds));
+            })
             ->orderBy($sortField, $sortDir)
             ->paginate(min($request->integer('per_page', 15), 100));
 
@@ -37,23 +48,31 @@ class WorkflowController extends Controller
 
     public function store(StoreWorkflowRequest $request): WorkflowResource
     {
-        $workflow = $this->service->create($request->validated());
+        $workflow = $this->service->create($request->safe()->except('tag_ids'));
 
-        return new WorkflowResource($workflow);
+        if ($request->has('tag_ids')) {
+            $workflow->tags()->sync($request->input('tag_ids'));
+        }
+
+        return new WorkflowResource($workflow->load(['tags', 'folder']));
     }
 
     public function show(Workflow $workflow): WorkflowResource
     {
-        $workflow->load(['nodes', 'edges']);
+        $workflow->load(['nodes', 'edges', 'tags', 'folder']);
 
         return new WorkflowResource($workflow);
     }
 
     public function update(UpdateWorkflowRequest $request, Workflow $workflow): WorkflowResource
     {
-        $workflow = $this->service->update($workflow, $request->validated());
+        $workflow = $this->service->update($workflow, $request->safe()->except('tag_ids'));
 
-        return new WorkflowResource($workflow);
+        if ($request->has('tag_ids')) {
+            $workflow->tags()->sync($request->input('tag_ids'));
+        }
+
+        return new WorkflowResource($workflow->load(['tags', 'folder']));
     }
 
     public function destroy(Workflow $workflow): JsonResponse

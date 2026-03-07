@@ -169,9 +169,31 @@ Workflow::removeEdge(int $edgeId): void
 | `run_async` | bool | Default async behavior |
 | `settings` | array\|null | Global settings (e.g. retry_count) |
 
-**Relationships:** `nodes()`, `edges()`, `runs()`
+**Relationships:** `nodes()`, `edges()`, `runs()`, `tags()`, `folder()`
 
 **Helper:** `triggerNode()` — returns the single trigger node
+
+### WorkflowTag
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `id` | int | Primary key |
+| `name` | string | Tag name (unique) |
+| `color` | string\|null | Hex color code (e.g. `#FF0000`) |
+
+**Relationships:** `workflows()`
+
+### WorkflowFolder
+
+| Attribute | Type | Description |
+|-----------|------|-------------|
+| `id` | int | Primary key |
+| `name` | string | Folder name |
+| `parent_id` | int\|null | Parent folder for nesting |
+
+**Relationships:** `parent()`, `children()`, `workflows()`
+
+**Helper:** `ancestors()` — returns array of parent folders from root to direct parent
 
 ### WorkflowNode
 
