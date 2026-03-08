@@ -1,9 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useData } from 'vitepress'
 import { createHighlighter } from 'shiki'
-
-const { isDark } = useData()
 
 const activeTab = ref('trigger')
 const highlighter = ref(null)
@@ -241,11 +238,11 @@ const highlightedCode = computed(() => {
           </div>
           <div class="browser-address">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <span>your-app.test/workflow-editor</span>
+            <span>myapp.test/workflow-editor</span>
           </div>
         </div>
-        <img v-if="isDark" src="/screenshots/workflow-editor.png" alt="Visual Workflow Editor" />
-        <img v-else src="/screenshots/workflow-editor-light.png" alt="Visual Workflow Editor" />
+        <img class="screenshot-dark" src="/screenshots/workflow-editor.png" alt="Visual Workflow Editor" />
+        <img class="screenshot-light" src="/screenshots/workflow-editor-light.png" alt="Visual Workflow Editor" />
       </div>
     </section>
 
@@ -834,6 +831,10 @@ html.dark .code-body :deep(.shiki span) {
   flex-shrink: 0;
 }
 
+@media (max-width: 640px) {
+  .browser-nav { display: none; }
+}
+
 .browser-address {
   flex: 1;
   display: flex;
@@ -857,6 +858,19 @@ html.dark .code-body :deep(.shiki span) {
   width: 100%;
   display: block;
 }
+
+/* Default: use prefers-color-scheme for SSR/initial load */
+.screenshot-dark { display: none; }
+.screenshot-light { display: block; }
+@media (prefers-color-scheme: dark) {
+  .screenshot-dark { display: block; }
+  .screenshot-light { display: none; }
+}
+/* Once VitePress hydrates, html class takes priority */
+html.dark .screenshot-dark { display: block; }
+html.dark .screenshot-light { display: none; }
+html:not(.dark) .screenshot-dark { display: none; }
+html:not(.dark) .screenshot-light { display: block; }
 
 
 /* Why Section */
