@@ -40,6 +40,7 @@ $notify = $workflow->addNode(
     [
         'notification_class' => NewOrderNotification::class,
         'notifiable_model'   => User::class,
+        'notifiable_id'      => '{{ item.user_id }}',
     ]
 );`,
   connect: `// Wire nodes together & activate

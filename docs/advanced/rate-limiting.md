@@ -57,7 +57,7 @@ try {
 
 When a queued job hits the concurrency limit, it is **released back to the queue** and retried after `queue_retry_delay` seconds. This is only applicable to async (queued) execution — synchronous calls always throw.
 
-```env
+```bash
 WORKFLOW_RATE_LIMIT_STRATEGY=queue
 WORKFLOW_RATE_LIMIT_RETRY_DELAY=30
 ```
@@ -133,7 +133,7 @@ $workflow->update([
 
 ### System-wide protection
 
-```env
+```bash
 # Max 20 workflows running at once across the entire system
 WORKFLOW_GLOBAL_MAX_CONCURRENT=20
 
@@ -143,7 +143,7 @@ WORKFLOW_MAX_CONCURRENT_PER_WORKFLOW=5
 
 ### Queue-based throttling
 
-```env
+```bash
 # Release jobs back to queue when limited
 WORKFLOW_RATE_LIMIT_STRATEGY=queue
 WORKFLOW_RATE_LIMIT_RETRY_DELAY=60
