@@ -9,6 +9,7 @@ const advancedSection = {
     { text: 'Custom Nodes', link: '/advanced/custom-nodes' },
     { text: 'Execution Engine', link: '/advanced/execution-engine' },
     { text: 'Error Handling', link: '/advanced/error-handling' },
+    { text: 'Rate Limiting', link: '/advanced/rate-limiting' },
     { text: 'Security', link: '/advanced/security' },
     { text: 'Testing', link: '/advanced/testing' },
   ],
