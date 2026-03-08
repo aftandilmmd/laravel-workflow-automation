@@ -1,9 +1,119 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { createHighlighter } from 'shiki'
 
 const activeTab = ref('trigger')
 const highlighter = ref(null)
+
+// --- Interactive grid background ---
+const gridCanvas = ref(null)
+let gridCtx = null
+let mouseX = -1000
+let mouseY = -1000
+let gridAnimFrame = null
+const GRID_SIZE = 40
+const GLOW_RADIUS = 200
+
+function drawGrid() {
+  const canvas = gridCanvas.value
+  if (!canvas || !gridCtx) return
+
+  const dpr = window.devicePixelRatio || 1
+  const w = window.innerWidth
+  const h = canvas.parentElement.offsetHeight
+
+  if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
+    canvas.width = w * dpr
+    canvas.height = h * dpr
+    canvas.style.width = w + 'px'
+    canvas.style.height = h + 'px'
+    gridCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  }
+
+  gridCtx.clearRect(0, 0, w, h)
+
+  const isDark = document.documentElement.classList.contains('dark')
+  const baseAlpha = isDark ? 0.025 : 0.035
+  const glowAlpha = isDark ? 0.3 : 0.22
+  const lineColor = isDark ? '255,255,255' : '0,0,0'
+
+  // Draw grid segments — only glow near cursor, not full line
+  // Vertical line segments
+  for (let x = 0; x <= w; x += GRID_SIZE) {
+    for (let y = 0; y < h; y += GRID_SIZE) {
+      const segCx = x
+      const segCy = y + GRID_SIZE / 2
+      const dx = segCx - mouseX
+      const dy = segCy - mouseY
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      const glow = Math.max(0, 1 - dist / GLOW_RADIUS)
+      const alpha = baseAlpha + (glowAlpha - baseAlpha) * glow * glow
+
+      gridCtx.beginPath()
+      gridCtx.strokeStyle = `rgba(${lineColor}, ${alpha})`
+      gridCtx.lineWidth = 0.5
+      gridCtx.moveTo(x, y)
+      gridCtx.lineTo(x, Math.min(y + GRID_SIZE, h))
+      gridCtx.stroke()
+    }
+  }
+
+  // Horizontal line segments
+  for (let y = 0; y <= h; y += GRID_SIZE) {
+    for (let x = 0; x < w; x += GRID_SIZE) {
+      const segCx = x + GRID_SIZE / 2
+      const segCy = y
+      const dx = segCx - mouseX
+      const dy = segCy - mouseY
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      const glow = Math.max(0, 1 - dist / GLOW_RADIUS)
+      const alpha = baseAlpha + (glowAlpha - baseAlpha) * glow * glow
+
+      gridCtx.beginPath()
+      gridCtx.strokeStyle = `rgba(${lineColor}, ${alpha})`
+      gridCtx.lineWidth = 0.5
+      gridCtx.moveTo(x, y)
+      gridCtx.lineTo(Math.min(x + GRID_SIZE, w), y)
+      gridCtx.stroke()
+    }
+  }
+
+  // Intersection dots near cursor
+  for (let x = 0; x <= w; x += GRID_SIZE) {
+    for (let y = 0; y <= h; y += GRID_SIZE) {
+      const dx = x - mouseX
+      const dy = y - mouseY
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      if (dist < GLOW_RADIUS) {
+        const glow = 1 - dist / GLOW_RADIUS
+        gridCtx.beginPath()
+        gridCtx.fillStyle = `rgba(99, 102, 241, ${glow * 0.4})`
+        gridCtx.arc(x, y, 1.5 + glow * 1.5, 0, Math.PI * 2)
+        gridCtx.fill()
+      }
+    }
+  }
+}
+
+function onGridMouseMove(e) {
+  const canvas = gridCanvas.value
+  if (!canvas) return
+  const rect = canvas.getBoundingClientRect()
+  mouseX = e.clientX - rect.left
+  mouseY = e.clientY - rect.top
+  if (!gridAnimFrame) {
+    gridAnimFrame = requestAnimationFrame(() => {
+      drawGrid()
+      gridAnimFrame = null
+    })
+  }
+}
+
+function onGridMouseLeave() {
+  mouseX = -1000
+  mouseY = -1000
+  drawGrid()
+}
 
 const tabs = [
   { id: 'trigger', label: 'Trigger' },
@@ -53,11 +163,29 @@ $workflow->activate();
 // a confirmation email + team notification.`,
 }
 
+let gridResizeObserver = null
+
 onMounted(async () => {
   highlighter.value = await createHighlighter({
     themes: ['github-dark', 'github-light'],
     langs: ['php'],
   })
+
+  if (gridCanvas.value) {
+    gridCtx = gridCanvas.value.getContext('2d')
+    drawGrid()
+    gridResizeObserver = new ResizeObserver(() => drawGrid())
+    gridResizeObserver.observe(gridCanvas.value.parentElement)
+    document.addEventListener('mousemove', onGridMouseMove)
+    document.addEventListener('mouseleave', onGridMouseLeave)
+  }
+})
+
+onUnmounted(() => {
+  if (gridResizeObserver) gridResizeObserver.disconnect()
+  if (gridAnimFrame) cancelAnimationFrame(gridAnimFrame)
+  document.removeEventListener('mousemove', onGridMouseMove)
+  document.removeEventListener('mouseleave', onGridMouseLeave)
 })
 
 const highlightedCode = computed(() => {
@@ -71,6 +199,9 @@ const highlightedCode = computed(() => {
 
 <template>
   <div class="home-page">
+    <!-- Interactive grid background -->
+    <canvas ref="gridCanvas" class="grid-bg"></canvas>
+
     <!-- Hero -->
     <section class="hero">
       <div class="hero-content">
@@ -293,6 +424,24 @@ const highlightedCode = computed(() => {
   max-width: 1152px;
   margin: 0 auto;
   padding: 0 24px;
+  position: relative;
+}
+
+.grid-bg {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure all sections sit above the grid */
+.hero, .screenshot-section, .edge-divider, .code-section,
+.features-section, .why-section, .cta-section {
+  position: relative;
+  z-index: 1;
 }
 
 /* Hero */
