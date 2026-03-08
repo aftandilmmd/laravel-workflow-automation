@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useData } from 'vitepress'
 import { createHighlighter } from 'shiki'
+
+const { isDark } = useData()
 
 const activeTab = ref('trigger')
 const highlighter = ref(null)
@@ -222,11 +225,27 @@ const highlightedCode = computed(() => {
       </div>
     </section>
 
-    <!-- Screenshot -->
+    <!-- Screenshot (browser mock) -->
     <section class="screenshot-section">
       <div class="screenshot-container">
-        <div class="screenshot-label">Visual Workflow Editor</div>
-        <img src="/screenshots/workflow-editor.png" alt="Visual Workflow Editor" />
+        <div class="browser-chrome">
+          <div class="browser-dots">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <div class="browser-nav">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+          </div>
+          <div class="browser-address">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>your-app.test/workflow-editor</span>
+          </div>
+        </div>
+        <img v-if="isDark" src="/screenshots/workflow-editor.png" alt="Visual Workflow Editor" />
+        <img v-else src="/screenshots/workflow-editor-light.png" alt="Visual Workflow Editor" />
       </div>
     </section>
 
@@ -781,19 +800,64 @@ html.dark .code-body :deep(.shiki span) {
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
 }
 
-.screenshot-label {
-  padding: 12px 20px;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--vp-c-text-3);
+.browser-chrome {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
   background: var(--vp-c-bg);
   border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.browser-dots {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dot-red { background: #ff5f57; }
+.dot-yellow { background: #febc2e; }
+.dot-green { background: #28c840; }
+
+.browser-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--vp-c-text-3);
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.browser-address {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--vp-c-bg-soft);
+  font-size: 12px;
+  font-family: var(--vp-font-family-mono);
+  color: var(--vp-c-text-3);
+}
+
+.browser-address svg {
+  flex-shrink: 0;
+  color: var(--vp-c-text-3);
+  opacity: 0.6;
 }
 
 .screenshot-container img {
   width: 100%;
   display: block;
 }
+
 
 /* Why Section */
 .why-section {
