@@ -17,6 +17,7 @@ import {
   X,
   Check,
   Plus,
+  Gauge,
 } from 'lucide-react'
 import { ReactFlowProvider } from '@xyflow/react'
 
@@ -60,9 +61,11 @@ export function WorkflowEditorPage() {
   const [allFolders, setAllFolders] = useState<WorkflowFolder[]>([])
   const [showTagPicker, setShowTagPicker] = useState(false)
   const [showFolderPicker, setShowFolderPicker] = useState(false)
+  const [showConcurrencyPicker, setShowConcurrencyPicker] = useState(false)
   const [newTagName, setNewTagName] = useState('')
   const tagPickerRef = useRef<HTMLDivElement>(null)
   const folderPickerRef = useRef<HTMLDivElement>(null)
+  const concurrencyPickerRef = useRef<HTMLDivElement>(null)
 
   const loadTagsAndFolders = useCallback(async () => {
     const [tagsRes, foldersRes] = await Promise.all([tagsApi.list(), foldersApi.list()])
@@ -91,6 +94,7 @@ export function WorkflowEditorPage() {
     const handler = (e: MouseEvent) => {
       if (tagPickerRef.current && !tagPickerRef.current.contains(e.target as HTMLElement)) setShowTagPicker(false)
       if (folderPickerRef.current && !folderPickerRef.current.contains(e.target as HTMLElement)) setShowFolderPicker(false)
+      if (concurrencyPickerRef.current && !concurrencyPickerRef.current.contains(e.target as HTMLElement)) setShowConcurrencyPicker(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -144,6 +148,16 @@ export function WorkflowEditorPage() {
     setNewTagName('')
     setAllTags((prev) => [...prev, res.data])
     await handleToggleTag(res.data.id)
+  }
+
+  const handleSetConcurrency = async (value: number) => {
+    if (!workflow) return
+    const currentSettings = workflow.settings ?? {}
+    await updateWorkflowMeta({
+      settings: { ...currentSettings, max_concurrent_runs: value },
+    })
+    loadWorkflow(workflow.id, useRegistryStore.getState().getByKey)
+    setShowConcurrencyPicker(false)
   }
 
   const handleDuplicate = async () => {
@@ -292,6 +306,48 @@ export function WorkflowEditorPage() {
                     </button>
                   </div>
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Concurrency limit picker */}
+          <div className="relative hidden md:block" ref={concurrencyPickerRef}>
+            <button
+              onClick={() => { setShowConcurrencyPicker(!showConcurrencyPicker); setShowTagPicker(false); setShowFolderPicker(false) }}
+              className={`flex items-center gap-1 rounded-md px-2 py-1 text-[10px] hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                (workflow.settings as Record<string, unknown> | null)?.max_concurrent_runs
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : 'text-gray-500 dark:text-gray-400'
+              }`}
+              title="Concurrency limit"
+            >
+              <Gauge size={12} />
+              <span>
+                {(workflow.settings as Record<string, unknown> | null)?.max_concurrent_runs
+                  ? `Max ${(workflow.settings as Record<string, unknown>).max_concurrent_runs}`
+                  : 'No limit'}
+              </span>
+            </button>
+            {showConcurrencyPicker && (
+              <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
+                <div className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                  Max Concurrent Runs
+                </div>
+                {[0, 1, 2, 3, 5, 10, 20].map((n) => {
+                  const current = ((workflow.settings as Record<string, unknown> | null)?.max_concurrent_runs as number) ?? 0
+                  return (
+                    <button
+                      key={n}
+                      onClick={() => handleSetConcurrency(n)}
+                      className={`flex w-full items-center gap-2 px-3 py-1.5 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                        current === n ? 'font-medium text-blue-600' : 'text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      {current === n && <Check size={12} />}
+                      <span className={current === n ? '' : 'ml-5'}>{n === 0 ? 'Unlimited' : String(n)}</span>
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>

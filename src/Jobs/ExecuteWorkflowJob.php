@@ -3,6 +3,7 @@
 namespace Aftandilmmd\WorkflowAutomation\Jobs;
 
 use Aftandilmmd\WorkflowAutomation\Engine\GraphExecutor;
+use Aftandilmmd\WorkflowAutomation\Exceptions\RateLimitExceededException;
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -43,7 +44,27 @@ class ExecuteWorkflowJob implements ShouldQueue
             return;
         }
 
-        $executor->execute($workflow, $this->payload, $this->triggerNodeId);
+        try {
+            $executor->execute($workflow, $this->payload, $this->triggerNodeId);
+        } catch (RateLimitExceededException $e) {
+            $strategy = config('workflow-automation.rate_limiting.strategy', 'exception');
+
+            if ($strategy === 'queue') {
+                $delay = (int) config('workflow-automation.rate_limiting.queue_retry_delay', 30);
+
+                Log::info("WorkflowJob rate-limited: workflow_id={$this->workflowId}, retrying in {$delay}s.", [
+                    'scope' => $e->scope,
+                    'current_runs' => $e->currentRuns,
+                    'max_concurrent' => $e->maxConcurrent,
+                ]);
+
+                $this->release($delay);
+
+                return;
+            }
+
+            throw $e;
+        }
     }
 
     public function failed(\Throwable $exception): void

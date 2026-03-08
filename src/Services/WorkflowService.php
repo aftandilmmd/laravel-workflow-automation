@@ -13,12 +13,14 @@ use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 use Aftandilmmd\WorkflowAutomation\Models\WorkflowEdge;
 use Aftandilmmd\WorkflowAutomation\Models\WorkflowNode;
 use Aftandilmmd\WorkflowAutomation\Models\WorkflowRun;
+use Aftandilmmd\WorkflowAutomation\Services\ConcurrencyGuard;
 
 class WorkflowService
 {
     public function __construct(
-        private readonly GraphExecutor  $executor,
-        private readonly GraphValidator $validator,
+        private readonly GraphExecutor   $executor,
+        private readonly GraphValidator  $validator,
+        private readonly ConcurrencyGuard $concurrencyGuard,
     ) {}
 
     // ── Execution ──────────────────────────────────────────────────
@@ -228,6 +230,28 @@ class WorkflowService
         $workflow = $this->resolveWorkflow($workflow);
 
         return $this->validator->errors($workflow);
+    }
+
+    // ── Rate Limiting ──────────────────────────────────────────────
+
+    /**
+     * Check if a workflow can run within concurrency limits.
+     */
+    public function canRun(int|Workflow $workflow): bool
+    {
+        $workflow = $this->resolveWorkflow($workflow);
+
+        return $this->concurrencyGuard->canRun($workflow);
+    }
+
+    /**
+     * Get concurrency status for a workflow (global + per-workflow limits).
+     */
+    public function rateLimitStatus(int|Workflow $workflow): array
+    {
+        $workflow = $this->resolveWorkflow($workflow);
+
+        return $this->concurrencyGuard->status($workflow);
     }
 
     // ── Builder helpers ────────────────────────────────────────────

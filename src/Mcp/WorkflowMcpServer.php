@@ -23,6 +23,7 @@ use Aftandilmmd\WorkflowAutomation\Mcp\Tools\ListCredentialTypesTool;
 use Aftandilmmd\WorkflowAutomation\Mcp\Tools\ListFoldersTool;
 use Aftandilmmd\WorkflowAutomation\Mcp\Tools\ListNodeTypesTool;
 use Aftandilmmd\WorkflowAutomation\Mcp\Tools\ListRunsTool;
+use Aftandilmmd\WorkflowAutomation\Mcp\Tools\RateLimitStatusTool;
 use Aftandilmmd\WorkflowAutomation\Mcp\Tools\ListTagsTool;
 use Aftandilmmd\WorkflowAutomation\Mcp\Tools\ListWorkflowsTool;
 use Aftandilmmd\WorkflowAutomation\Mcp\Tools\PinNodeTool;
@@ -70,6 +71,7 @@ class WorkflowMcpServer extends Server
         RunWorkflowTool::class,
         GetRunTool::class,
         ListRunsTool::class,
+        RateLimitStatusTool::class,
 
         // Registry & Discovery
         ListNodeTypesTool::class,

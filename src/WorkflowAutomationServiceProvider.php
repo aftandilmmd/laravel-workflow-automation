@@ -16,6 +16,7 @@ use Aftandilmmd\WorkflowAutomation\Engine\NodeRunner;
 use Aftandilmmd\WorkflowAutomation\Plugin\PluginManager;
 use Aftandilmmd\WorkflowAutomation\Plugin\PluginRegistry;
 use Aftandilmmd\WorkflowAutomation\Registry\NodeRegistry;
+use Aftandilmmd\WorkflowAutomation\Services\ConcurrencyGuard;
 use Aftandilmmd\WorkflowAutomation\Services\WorkflowService;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -41,16 +42,20 @@ class WorkflowAutomationServiceProvider extends ServiceProvider
             $app->make(NodeRegistry::class),
         ));
 
+        $this->app->singleton(ConcurrencyGuard::class);
+
         $this->app->singleton(GraphExecutor::class, fn ($app) => new GraphExecutor(
             registry: $app->make(NodeRegistry::class),
             nodeRunner: $app->make(NodeRunner::class),
             expressionEvaluator: $app->make(ExpressionEvaluatorInterface::class),
             graphValidator: $app->make(GraphValidator::class),
+            concurrencyGuard: $app->make(ConcurrencyGuard::class),
         ));
 
         $this->app->singleton(WorkflowService::class, fn ($app) => new WorkflowService(
             executor: $app->make(GraphExecutor::class),
             validator: $app->make(GraphValidator::class),
+            concurrencyGuard: $app->make(ConcurrencyGuard::class),
         ));
     }
 

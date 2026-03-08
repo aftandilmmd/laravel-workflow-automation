@@ -234,6 +234,7 @@ export interface UpdateWorkflowPayload {
   description?: string
   folder_id?: number | null
   tag_ids?: number[]
+  settings?: Record<string, unknown> | null
 }
 
 export interface CreateNodePayload {

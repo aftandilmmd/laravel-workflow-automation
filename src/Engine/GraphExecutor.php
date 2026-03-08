@@ -21,6 +21,7 @@ use Aftandilmmd\WorkflowAutomation\Models\WorkflowNode;
 use Aftandilmmd\WorkflowAutomation\Models\WorkflowNodeRun;
 use Aftandilmmd\WorkflowAutomation\Models\WorkflowRun;
 use Aftandilmmd\WorkflowAutomation\Registry\NodeRegistry;
+use Aftandilmmd\WorkflowAutomation\Services\ConcurrencyGuard;
 use Illuminate\Support\Collection;
 
 class GraphExecutor
@@ -30,6 +31,7 @@ class GraphExecutor
         private readonly NodeRunner                    $nodeRunner,
         private readonly ExpressionEvaluatorInterface  $expressionEvaluator,
         private readonly GraphValidator                $graphValidator,
+        private readonly ConcurrencyGuard              $concurrencyGuard,
     ) {}
 
     /**
@@ -37,6 +39,8 @@ class GraphExecutor
      */
     public function execute(Workflow $workflow, array $initialPayload = [], ?int $triggerNodeId = null): WorkflowRun
     {
+        $this->concurrencyGuard->acquire($workflow);
+
         $run = WorkflowRun::create([
             'workflow_id'     => $workflow->id,
             'status'          => RunStatus::Pending,

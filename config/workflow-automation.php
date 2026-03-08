@@ -91,6 +91,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Rate Limiting / Concurrency
+    |--------------------------------------------------------------------------
+    |
+    | Control how many workflow runs can execute simultaneously.
+    |
+    | 'global_max_concurrent'       — Maximum runs across ALL workflows (0 = unlimited).
+    | 'max_concurrent_per_workflow'  — Default per-workflow limit (0 = unlimited).
+    |                                  Can be overridden per workflow via settings.max_concurrent_runs.
+    | 'strategy'                    — What to do when the limit is reached:
+    |                                  'exception' — throw RateLimitExceededException
+    |                                  'queue'     — release the job back to the queue (async only)
+    | 'queue_retry_delay'           — Seconds to wait before retrying a rate-limited queued job.
+    |
+    */
+
+    'rate_limiting' => [
+        'global_max_concurrent'      => env('WORKFLOW_GLOBAL_MAX_CONCURRENT', 0),
+        'max_concurrent_per_workflow' => env('WORKFLOW_MAX_CONCURRENT_PER_WORKFLOW', 0),
+        'strategy'                   => env('WORKFLOW_RATE_LIMIT_STRATEGY', 'exception'),
+        'queue_retry_delay'          => env('WORKFLOW_RATE_LIMIT_RETRY_DELAY', 30),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Execution Limits
     |--------------------------------------------------------------------------
     */
