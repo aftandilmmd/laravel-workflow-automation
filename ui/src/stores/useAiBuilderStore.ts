@@ -18,12 +18,14 @@ interface AiBuilderState {
   model: string
   error: string | null
   streamDone: boolean
+  apiKeyMissing: boolean
 
   open: () => void
   close: () => void
   setProvider: (p: string) => void
   setModel: (m: string) => void
   sendPrompt: (workflowId: number, prompt: string) => Promise<void>
+  checkApiKey: () => Promise<void>
   reset: () => void
 }
 
@@ -35,12 +37,37 @@ export const useAiBuilderStore = create<AiBuilderState>((set, get) => ({
   model: '',
   error: null,
   streamDone: false,
+  apiKeyMissing: false,
 
   open: () => set({ isOpen: true }),
   close: () => set({ isOpen: false }),
-  setProvider: (provider) => set({ provider, model: '' }),
+  setProvider: (provider) => {
+    set({ provider, model: '' })
+    get().checkApiKey()
+  },
   setModel: (model) => set({ model }),
   reset: () => set({ messages: [], isStreaming: false, error: null, streamDone: false }),
+
+  checkApiKey: async () => {
+    try {
+      const baseUrl = getBaseUrl()
+      const { provider } = get()
+      const query = provider ? `?provider=${encodeURIComponent(provider)}` : ''
+      const headers: Record<string, string> = {}
+      const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+      if (csrf) headers['X-CSRF-TOKEN'] = csrf
+      const token = win.__WORKFLOW_API_TOKEN__ as string | undefined
+      if (token) headers['Authorization'] = `Bearer ${token}`
+
+      const res = await fetch(`${baseUrl}/ai-builder/status${query}`, { headers, credentials: 'same-origin' })
+      if (res.ok) {
+        const data = await res.json()
+        set({ apiKeyMissing: !data.has_api_key })
+      }
+    } catch {
+      // silently ignore
+    }
+  },
 
   sendPrompt: async (workflowId: number, prompt: string) => {
     const { provider, model } = get()

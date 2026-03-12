@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { X, Send, Bot, Loader2, Trash2 } from 'lucide-react'
+import { X, Send, Bot, Loader2, Trash2, Mic, Square, AlertTriangle } from 'lucide-react'
 import { useAiBuilderStore } from '../../stores/useAiBuilderStore'
 import { useRegistryStore } from '../../stores/useRegistryStore'
+import { useAudioRecorder } from '../../hooks/useAudioRecorder'
 import { ChatMessage } from './ChatMessage'
 
 interface Props {
@@ -17,10 +18,12 @@ export function AiBuilderPanel({ workflowId, onStreamDone }: Props) {
     model,
     error,
     streamDone,
+    apiKeyMissing,
     close,
     setProvider,
     setModel,
     sendPrompt,
+    checkApiKey,
     reset,
   } = useAiBuilderStore()
 
@@ -28,6 +31,7 @@ export function AiBuilderPanel({ workflowId, onStreamDone }: Props) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const streamDoneHandled = useRef(false)
+  const { isSupported: micSupported, isRecording, isTranscribing, error: micError, startRecording, stopRecording } = useAudioRecorder()
 
   // Get provider/model options from the AI node's config schema in the registry
   const registryNodes = useRegistryStore((s) => s.nodes)
@@ -58,10 +62,30 @@ export function AiBuilderPanel({ workflowId, onStreamDone }: Props) {
     }
   }, [streamDone, onStreamDone])
 
+  // Check API key on open
+  useEffect(() => {
+    checkApiKey()
+  }, [checkApiKey])
+
   // Focus textarea on open
   useEffect(() => {
     textareaRef.current?.focus()
   }, [])
+
+  const handleMicToggle = async () => {
+    if (isRecording) {
+      const text = await stopRecording()
+      if (text) {
+        setInput((prev) => {
+          const separator = prev && !prev.endsWith(' ') ? ' ' : ''
+          return prev + separator + text
+        })
+        requestAnimationFrame(autoResize)
+      }
+    } else {
+      startRecording()
+    }
+  }
 
   const handleSend = () => {
     const trimmed = input.trim()
@@ -84,6 +108,7 @@ export function AiBuilderPanel({ workflowId, onStreamDone }: Props) {
       handleSend()
     }
   }
+
 
   return (
     <div className="flex h-full flex-col">
@@ -137,6 +162,16 @@ export function AiBuilderPanel({ workflowId, onStreamDone }: Props) {
         </select>
       </div>
 
+      {/* API Key Warning */}
+      {apiKeyMissing && (
+        <div className="mx-3 mt-2 flex items-start gap-1.5 rounded bg-amber-50 px-2.5 py-2 text-[11px] text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+          <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+          <span>
+            API key for <strong>{provider || 'default provider'}</strong> is not configured. Add it to your <code className="rounded bg-amber-100 px-1 dark:bg-amber-900/50">.env</code> file.
+          </span>
+        </div>
+      )}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
         {messages.length === 0 && (
@@ -168,6 +203,11 @@ export function AiBuilderPanel({ workflowId, onStreamDone }: Props) {
           {error}
         </div>
       )}
+      {micError && (
+        <div className="mx-3 mb-2 rounded bg-yellow-50 px-2 py-1.5 text-[10px] text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+          {micError}
+        </div>
+      )}
 
       {/* Input */}
       <div className="border-t border-gray-200 p-3 dark:border-gray-700">
@@ -177,11 +217,28 @@ export function AiBuilderPanel({ workflowId, onStreamDone }: Props) {
             value={input}
             onChange={(e) => { setInput(e.target.value); autoResize() }}
             onKeyDown={handleKeyDown}
-            placeholder="Describe your workflow..."
-            disabled={isStreaming}
+            placeholder={isTranscribing ? 'Transcribing...' : 'Describe your workflow...'}
+            disabled={isStreaming || isTranscribing}
             rows={1}
             className="flex-1 resize-none rounded-md border border-gray-300 px-2.5 py-1.5 text-xs text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
           />
+          {micSupported && !isStreaming && (
+            <button
+              type="button"
+              onClick={handleMicToggle}
+              disabled={isTranscribing}
+              className={`self-end rounded-md p-2 ${
+                isRecording
+                  ? 'animate-pulse bg-red-500 text-white'
+                  : isTranscribing
+                    ? 'bg-gray-200 text-gray-400 dark:bg-gray-600 dark:text-gray-500'
+                    : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500'
+              }`}
+              title={isRecording ? 'Stop recording' : isTranscribing ? 'Transcribing...' : 'Voice input'}
+            >
+              {isRecording ? <Square size={14} /> : isTranscribing ? <Loader2 size={14} className="animate-spin" /> : <Mic size={14} />}
+            </button>
+          )}
           <button
             onClick={handleSend}
             disabled={isStreaming || !input.trim()}
