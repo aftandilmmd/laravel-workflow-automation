@@ -45,25 +45,12 @@ $email = $workflow->addNode('Send Email', 'send_mail', [
 
 ### Connecting Nodes
 
-From the **Workflow** model:
-
-```php
-$workflow->connect(
-    int|WorkflowNode $source,
-    int|WorkflowNode $target,
-    string $sourcePort = 'main',
-    string $targetPort = 'main',
-): WorkflowEdge
-```
-
-From a **WorkflowNode** (returns the **target** node for chaining):
-
 ```php
 $target = $source->connect(
     int|WorkflowNode $target,
     string $sourcePort = 'main',
     string $targetPort = 'main',
-): WorkflowNode
+): WorkflowNode  // returns the target node for chaining
 ```
 
 Examples:

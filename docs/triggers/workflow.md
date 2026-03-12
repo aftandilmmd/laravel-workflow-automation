@@ -65,7 +65,7 @@ $orderTrigger = $orderWf->addNode('New Order', 'webhook', [
 $processOrder = $orderWf->addNode('Process', 'set_fields', [
     'fields' => ['status' => 'processed'],
 ]);
-$orderWf->connect($orderTrigger, $processOrder);
+$orderTrigger->connect($processOrder);
 $orderWf->activate();
 
 // 2. Shipping Workflow (triggered when order completes)
@@ -79,7 +79,7 @@ $ship = $shippingWf->addNode('Ship', 'http_request', [
     'method' => 'POST',
     'body'   => '{{ item.data }}',
 ]);
-$shippingWf->connect($shippingTrigger, $ship);
+$shippingTrigger->connect($ship);
 $shippingWf->activate();
 
 // 3. Invoice Workflow (triggered when shipping completes)
@@ -93,7 +93,7 @@ $invoice = $invoiceWf->addNode('Send Invoice', 'send_mail', [
     'subject' => 'Your invoice',
     'body'    => 'Order has been shipped and invoiced.',
 ]);
-$invoiceWf->connect($invoiceTrigger, $invoice);
+$invoiceTrigger->connect($invoice);
 $invoiceWf->activate();
 ```
 
@@ -114,7 +114,7 @@ $notify = $errorHandler->addNode('Alert Team', 'send_notification', [
     'message' => 'Workflow {{ item.source_workflow_id }} (run {{ item.source_run_id }}) failed: {{ item.error_message }}',
 ]);
 
-$errorHandler->connect($trigger, $notify);
+$trigger->connect($notify);
 $errorHandler->activate();
 ```
 

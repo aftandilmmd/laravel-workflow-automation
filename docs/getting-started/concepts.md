@@ -45,8 +45,7 @@ A single step in the workflow. Every node has:
 A connection from one node's output port to another node's input port.
 
 ```php
-$workflow->connect(
-    $sourceNode,
+$sourceNode->connect(
     $targetNode,
     sourcePort: 'main',   // default
     targetPort: 'main',   // default

@@ -61,10 +61,10 @@ $reject = $orderWorkflow->addNode('Reject', 'send_mail', [
     'body'    => 'Your order could not be validated.',
 ]);
 
-$orderWorkflow->connect($trigger, $validate);
-$orderWorkflow->connect($validate, $check);          // main → check
-$orderWorkflow->connect($check, $process, 'true');    // valid → process
-$orderWorkflow->connect($check, $reject, 'false');    // invalid → reject
+$trigger->connect($validate);
+$validate->connect($check);                           // main → check
+$check->connect($process, 'true');                    // valid → process
+$check->connect($reject, 'false');                    // invalid → reject
 ```
 
 **Key point**: The parent workflow **waits** for the child, **reads its output**, and **branches based on the result**. This is impossible with the Workflow Trigger.
@@ -116,7 +116,7 @@ $importTrigger = $importWf->addNode('Start', 'schedule', [
 $fetch = $importWf->addNode('Fetch Data', 'http_request', [
     'url' => 'https://api.example.com/data',
 ]);
-$importWf->connect($importTrigger, $fetch);
+$importTrigger->connect($fetch);
 $importWf->activate();
 
 // Team B builds the processing workflow — listens to import
@@ -128,7 +128,7 @@ $processTrigger = $processWf->addNode('Import Done', 'workflow', [
 $transform = $processWf->addNode('Transform', 'set_fields', [
     'fields' => ['processed_at' => '{{ now() }}'],
 ]);
-$processWf->connect($processTrigger, $transform);
+$processTrigger->connect($transform);
 $processWf->activate();
 
 // Team C builds the export workflow — listens to processing
@@ -142,7 +142,7 @@ $export = $exportWf->addNode('Export', 'http_request', [
     'method' => 'POST',
     'body'   => '{{ item.data }}',
 ]);
-$exportWf->connect($exportTrigger, $export);
+$exportTrigger->connect($export);
 $exportWf->activate();
 ```
 
@@ -194,7 +194,7 @@ $alert = $errorHandler->addNode('Send Alert', 'send_notification', [
     'message' => 'Workflow #{{ item.source_workflow_id }} failed (run #{{ item.source_run_id }}): {{ item.error_message }}',
 ]);
 
-$errorHandler->connect($trigger, $alert);
+$trigger->connect($alert);
 $errorHandler->activate();
 ```
 
