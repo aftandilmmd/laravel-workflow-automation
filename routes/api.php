@@ -1,6 +1,7 @@
 <?php
 
 use Aftandilmmd\WorkflowAutomation\Http\Controllers\AiBuilderController;
+use Aftandilmmd\WorkflowAutomation\Http\Controllers\TranscriptionController;
 use Aftandilmmd\WorkflowAutomation\Http\Controllers\CredentialController;
 use Aftandilmmd\WorkflowAutomation\Http\Controllers\FolderController;
 use Aftandilmmd\WorkflowAutomation\Http\Controllers\MetadataController;
@@ -30,6 +31,7 @@ if (config('workflow-automation.api_routes', true)) {
             Route::post('workflows/{workflow}/validate', [WorkflowController::class, 'validateWorkflow']);
             Route::post('workflows/{workflow}/test-node', [WorkflowRunController::class, 'testNode']);
             Route::post('workflows/{workflow}/ai-build', [AiBuilderController::class, 'build']);
+            Route::get('ai-builder/status', [AiBuilderController::class, 'status']);
 
             // ── Nodes ────────────────────────────────────────────────
             Route::post('workflows/{workflow}/nodes', [WorkflowNodeController::class, 'store']);
@@ -71,6 +73,9 @@ if (config('workflow-automation.api_routes', true)) {
             // ── Credentials ───────────────────────────────────────────
             Route::apiResource('credentials', CredentialController::class);
             Route::get('credentials-types', [CredentialController::class, 'types']);
+
+            // ── Transcription (STT) ─────────────────────────────────────
+            Route::post('transcribe', [TranscriptionController::class, 'transcribe']);
         });
 }
 

@@ -5,6 +5,8 @@ namespace Aftandilmmd\WorkflowAutomation\Http\Controllers;
 use Aftandilmmd\WorkflowAutomation\Http\Requests\AiBuildRequest;
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 use Aftandilmmd\WorkflowAutomation\Registry\NodeRegistry;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 class AiBuilderController extends Controller
@@ -88,6 +90,37 @@ class AiBuilderController extends Controller
 
             return response()->json(['message' => $message], 500);
         }
+    }
+
+    public function status(Request $request): JsonResponse
+    {
+        $provider = $request->query('provider')
+            ?: config('workflow-automation.ai_builder.default_provider', 'openai');
+
+        $envKeyMap = [
+            'openai'     => 'OPENAI_API_KEY',
+            'anthropic'  => 'ANTHROPIC_API_KEY',
+            'gemini'     => 'GEMINI_API_KEY',
+            'groq'       => 'GROQ_API_KEY',
+            'mistral'    => 'MISTRAL_API_KEY',
+            'deepseek'   => 'DEEPSEEK_API_KEY',
+            'ollama'     => null,
+            'xai'        => 'XAI_API_KEY',
+            'cohere'     => 'COHERE_API_KEY',
+            'elevenlabs' => 'ELEVENLABS_API_KEY',
+            'jina'       => 'JINA_API_KEY',
+            'voyageai'   => 'VOYAGEAI_API_KEY',
+        ];
+
+        $key = strtolower($provider);
+        $envKey = $envKeyMap[$key] ?? null;
+
+        $hasKey = $envKey === null || ! empty(env($envKey));
+
+        return response()->json([
+            'provider'    => $provider,
+            'has_api_key' => $hasKey,
+        ]);
     }
 
     protected function resolveProvider(string $provider): mixed
