@@ -36,6 +36,7 @@ import { NodePalette } from '../palette/NodePalette'
 import { NodeConfigPanel } from '../config/NodeConfigPanel'
 import { RunHistoryPanel } from '../runs/RunHistoryPanel'
 import { ExecuteModal } from '../execution/ExecuteModal'
+import { TestNodeInputModal } from '../execution/TestNodeInputModal'
 import { LoadingSpinner } from '../shared/LoadingSpinner'
 import { ConfirmDialog } from '../shared/ConfirmDialog'
 import { AiBuilderPanel } from '../ai-builder/AiBuilderPanel'
@@ -47,7 +48,7 @@ export function WorkflowEditorPage() {
   const navigate = useNavigate()
   const { workflow, isLoading, loadWorkflow, updateWorkflowMeta, reset, selectedNodeId, selectNode, autoLayout } = useWorkflowEditorStore()
   const { fetchRegistry } = useRegistryStore()
-  const { fetchRuns } = useRunStore()
+  const { fetchRuns, pendingTestNodeId, clearPendingTest, testNode: runTestNode, isTestingNode, lastTriggerPayload } = useRunStore()
   const { theme, toggle: toggleTheme } = useThemeStore()
   const aiBuilder = useAiBuilderStore()
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('palette')
@@ -502,6 +503,27 @@ export function WorkflowEditorPage() {
           }}
         />
       )}
+      {/* Canvas-triggered Test Node Modal */}
+      {pendingTestNodeId && (() => {
+        const pendingNode = useWorkflowEditorStore.getState().rfNodes.find(
+          (n) => (n.data as Record<string, unknown>).apiNode && ((n.data as Record<string, unknown>).apiNode as Record<string, unknown>).id === pendingTestNodeId
+        )
+        const pendingNodeName = pendingNode
+          ? (pendingNode.data as Record<string, unknown>).label as string
+          : `Node #${pendingTestNodeId}`
+        return (
+          <TestNodeInputModal
+            nodeName={pendingNodeName}
+            onRun={(payload) => {
+              runTestNode(workflow.id, pendingTestNodeId, payload as Record<string, unknown>)
+              clearPendingTest()
+            }}
+            onClose={clearPendingTest}
+            isRunning={isTestingNode}
+            initialPayload={lastTriggerPayload ? JSON.stringify(lastTriggerPayload, null, 2) : undefined}
+          />
+        )
+      })()}
       <ConfirmDialog
         open={showDuplicateConfirm}
         title="Duplicate Workflow"

@@ -1,11 +1,11 @@
-import { memo, useState } from 'react'
+import { memo, useState, useCallback } from 'react'
 import { Handle, Position, type NodeProps } from '@xyflow/react'
 import type { CustomNodeData } from '../../lib/mappers'
 import { NODE_TYPE_COLORS } from '../../lib/constants'
 import { NODE_TYPE_ICON } from './nodeStyles'
 import type { NodeType } from '../../api/types'
 import { useRunStore } from '../../stores/useRunStore'
-import { CheckCircle2, XCircle, Loader2, Pin } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, Pin, Play } from 'lucide-react'
 
 function CustomNodeComponent({ data, selected }: NodeProps) {
   const nodeData = data as unknown as CustomNodeData
@@ -19,13 +19,21 @@ function CustomNodeComponent({ data, selected }: NodeProps) {
 
   const nodeTestResults = useRunStore((s) => s.nodeTestResults)
   const isTestingNode = useRunStore((s) => s.isTestingNode)
+  const requestNodeTest = useRunStore((s) => s.requestNodeTest)
   const apiNodeId = nodeData.apiNode?.id
   const testResult = apiNodeId && nodeTestResults ? nodeTestResults[apiNodeId] : undefined
   const hasPinnedData = !!(nodeData.apiNode?.pinned_data?.input || nodeData.apiNode?.pinned_data?.output)
 
+  const handleRunClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (apiNodeId && !isTestingNode) {
+      requestNodeTest(apiNodeId)
+    }
+  }, [apiNodeId, isTestingNode, requestNodeTest])
+
   return (
     <div
-      className={`relative min-w-[160px] rounded-lg border-l-4 bg-white dark:bg-gray-800 shadow-md ${colors.border} ${
+      className={`group relative min-w-[160px] rounded-lg border-l-4 bg-white dark:bg-gray-800 shadow-md ${colors.border} ${
         selected ? 'ring-2 ring-blue-400' : ''
       }`}
     >
@@ -75,7 +83,18 @@ function CustomNodeComponent({ data, selected }: NodeProps) {
             {nodeData.label}
           </span>
         </div>
-        <div className="mt-0.5 text-[10px] text-gray-400 dark:text-gray-500">{nodeData.nodeKey}</div>
+        <div className="flex items-center justify-between mt-0.5">
+          <span className="text-[10px] text-gray-400 dark:text-gray-500">{nodeData.nodeKey}</span>
+          <button
+            onClick={handleRunClick}
+            disabled={isTestingNode}
+            className="flex items-center gap-0.5 rounded px-1 py-0.5 text-[9px] font-medium text-green-600 opacity-0 transition-opacity hover:bg-green-50 group-hover:opacity-100 disabled:opacity-50 dark:text-green-400 dark:hover:bg-green-900/30 nopan"
+            title="Run up to this node"
+          >
+            {isTestingNode ? <Loader2 size={9} className="animate-spin" /> : <Play size={9} />}
+            Run
+          </button>
+        </div>
       </div>
 
       {/* Output Port Labels */}

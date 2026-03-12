@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { X, Save, Play, Loader2, Settings, Database, Pin, PinOff, BookOpen } from 'lucide-react'
+import { X, Save, Play, Loader2, Settings, Database, Pin, PinOff, BookOpen, ChevronDown, ChevronRight, ArrowDownLeft } from 'lucide-react'
 import { useWorkflowEditorStore } from '../../stores/useWorkflowEditorStore'
 import { useRunStore } from '../../stores/useRunStore'
 import { nodesApi } from '../../api/nodes'
@@ -10,6 +10,7 @@ import { JsonViewer } from '../shared/JsonViewer'
 import { NodeRunStatusBadge } from '../shared/StatusBadge'
 import { TestNodeInputModal } from '../execution/TestNodeInputModal'
 import { MarkdownRenderer } from '../shared/MarkdownRenderer'
+import { getUpstreamInputs, type UpstreamInput } from '../../lib/upstreamData'
 
 type Tab = 'config' | 'output' | 'docs'
 
@@ -245,6 +246,7 @@ export function NodeConfigPanel({ onTabChange }: NodeConfigPanelProps) {
             onPin={handlePinOutput}
             onUnpin={handleUnpin}
             isPinning={isPinning}
+            selectedNodeId={String(selectedApiNode.id)}
           />
         )}
       </div>
@@ -304,18 +306,25 @@ interface NodeOutputViewProps {
   onPin: () => void
   onUnpin: () => void
   isPinning: boolean
+  selectedNodeId: string
 }
 
-function NodeOutputView({ nodeResult, pinnedData, onPin, onUnpin, isPinning }: NodeOutputViewProps) {
+function NodeOutputView({ nodeResult, pinnedData, onPin, onUnpin, isPinning, selectedNodeId }: NodeOutputViewProps) {
   const hasPinned = !!(pinnedData?.input || pinnedData?.output)
+  const rfEdges = useWorkflowEditorStore((s) => s.rfEdges)
+  const rfNodes = useWorkflowEditorStore((s) => s.rfNodes)
+  const nodeTestResults = useRunStore((s) => s.nodeTestResults)
 
-  if (!nodeResult && !hasPinned) {
+  const upstreamInputs = getUpstreamInputs(selectedNodeId, rfEdges, rfNodes, nodeTestResults)
+  const hasUpstream = upstreamInputs.length > 0
+
+  if (!nodeResult && !hasPinned && !hasUpstream) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <Database size={32} className="mb-3 text-gray-300 dark:text-gray-600" />
         <p className="text-sm text-gray-400 dark:text-gray-500">No test output yet</p>
         <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-          Click <strong>Test</strong> to execute the workflow up to this node
+          Click <strong>Test</strong> or hover a node and click <strong>Run</strong> to execute
         </p>
       </div>
     )
@@ -323,6 +332,15 @@ function NodeOutputView({ nodeResult, pinnedData, onPin, onUnpin, isPinning }: N
 
   return (
     <div className="space-y-3">
+      {/* Upstream Incoming Data */}
+      {hasUpstream && (
+        <div className="space-y-2">
+          {upstreamInputs.map((up) => (
+            <UpstreamInputSection key={`${up.nodeId}-${up.sourcePort}`} upstream={up} />
+          ))}
+        </div>
+      )}
+
       {/* Pinned Data Section */}
       {hasPinned && !nodeResult && (
         <>
@@ -388,6 +406,36 @@ function NodeOutputView({ nodeResult, pinnedData, onPin, onUnpin, isPinning }: N
             <JsonViewer data={nodeResult.output} maxHeight="300px" />
           </div>
         </>
+      )}
+    </div>
+  )
+}
+
+function UpstreamInputSection({ upstream }: { upstream: UpstreamInput }) {
+  const [expanded, setExpanded] = useState(true)
+
+  return (
+    <div className="rounded-md border border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-900/20">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center gap-1.5 px-2.5 py-1.5 text-left"
+      >
+        {expanded ? <ChevronDown size={12} className="text-blue-500" /> : <ChevronRight size={12} className="text-blue-500" />}
+        <ArrowDownLeft size={10} className="text-blue-400" />
+        <span className="text-[11px] font-medium text-blue-700 dark:text-blue-300">
+          {upstream.nodeLabel}
+        </span>
+        <span className="text-[9px] text-blue-400 dark:text-blue-500">
+          ({upstream.sourcePort})
+        </span>
+        {upstream.source === 'pinned' && (
+          <Pin size={9} className="ml-auto text-orange-400" />
+        )}
+      </button>
+      {expanded && (
+        <div className="border-t border-blue-200 px-2.5 py-2 dark:border-blue-800">
+          <JsonViewer data={upstream.data} maxHeight="200px" />
+        </div>
       )}
     </div>
   )
