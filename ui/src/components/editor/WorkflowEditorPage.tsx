@@ -198,7 +198,7 @@ export function WorkflowEditorPage() {
           >
             <ArrowLeft size={18} />
           </button>
-          <h1 className="truncate max-w-[140px] md:max-w-none text-sm font-semibold text-gray-900 dark:text-gray-100">{workflow.name}</h1>
+          <h1 className="truncate max-w-35 md:max-w-none text-sm font-semibold text-gray-900 dark:text-gray-100">{workflow.name}</h1>
           <span
             className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
               workflow.is_active ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'

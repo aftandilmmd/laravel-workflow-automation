@@ -33,7 +33,7 @@ function CustomNodeComponent({ data, selected }: NodeProps) {
 
   return (
     <div
-      className={`group relative min-w-[160px] rounded-lg border-l-4 bg-white dark:bg-gray-800 shadow-md ${colors.border} ${
+      className={`group relative min-w-40 rounded-lg border-l-4 bg-white dark:bg-gray-800 shadow-md ${colors.border} ${
         selected ? 'ring-2 ring-blue-400' : ''
       }`}
     >
@@ -70,7 +70,7 @@ function CustomNodeComponent({ data, selected }: NodeProps) {
             position={Position.Left}
             id={port}
             style={{ top: `${topPercent}%` }}
-            className="!h-2.5 !w-2.5 !border-2 !border-white !bg-gray-400"
+            className="h-2.5! w-2.5! border-2! border-white! bg-gray-400!"
           />
         )
       })}
@@ -130,10 +130,10 @@ function CustomNodeComponent({ data, selected }: NodeProps) {
             position={Position.Right}
             id={port}
             style={{ top: `${topPercent}%` }}
-            className={`!border-2 !border-white transition-all ${
+            className={`border-2! border-white! transition-all ${
               hoveredPort === port
-                ? '!h-3.5 !w-3.5 !bg-blue-600'
-                : '!h-2.5 !w-2.5 !bg-blue-500'
+                ? 'h-3.5! w-3.5! bg-blue-600!'
+                : 'h-2.5! w-2.5! bg-blue-500!'
             }`}
             onMouseEnter={() => setHoveredPort(port)}
             onMouseLeave={() => setHoveredPort(null)}
