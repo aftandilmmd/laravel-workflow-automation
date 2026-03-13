@@ -93,6 +93,10 @@ $childRuns = $parentRun->childRuns; // Navigate down
 
 For loose coupling and event-driven chaining, see [Workflow Chaining](/advanced/workflow-chaining).
 
+## Advanced: Workflow Chaining
+
+The Sub Workflow node is one of two mechanisms for connecting workflows together. For a comprehensive comparison of both approaches (Sub Workflow vs Workflow Trigger), decision guides, and advanced patterns, see the **[Workflow Chaining](/advanced/workflow-chaining)** guide.
+
 ## Tips
 
 - Sub-workflows have independent run records for separate tracking and debugging

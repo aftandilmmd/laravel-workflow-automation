@@ -143,6 +143,10 @@ Active workflow triggers are cached for 60 seconds. After creating or modifying 
 - Wait up to 60 seconds for automatic cache refresh, or
 - Clear manually: `Cache::forget('workflow:workflow_triggers')`
 
+## Advanced: Workflow Chaining
+
+The Workflow Trigger is one of two mechanisms for connecting workflows together. For a comprehensive comparison of both approaches (Workflow Trigger vs Sub Workflow), decision guides, and advanced patterns, see the **[Workflow Chaining](/advanced/workflow-chaining)** guide.
+
 ## Tips
 
 - Chained workflows are always dispatched **asynchronously** via the queue
