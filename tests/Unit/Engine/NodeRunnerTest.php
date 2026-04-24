@@ -27,9 +27,13 @@ it('runs a node successfully', function () {
 it('retries on failure and succeeds', function () {
     $node = Mockery::mock(NodeInterface::class);
     $node->shouldReceive('execute')
-        ->times(2)
+        ->once()
         ->andThrow(new RuntimeException('fail'))
-        ->andReturn(NodeOutput::main([['ok' => true]]));
+        ->ordered();
+    $node->shouldReceive('execute')
+        ->once()
+        ->andReturn(NodeOutput::main([['ok' => true]]))
+        ->ordered();
     $node->shouldReceive('outputPorts')->andReturn(['main']);
 
     $input = new NodeInput(items: [[]], context: $this->context);

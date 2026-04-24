@@ -2,4 +2,4 @@
 
 use Aftandilmmd\WorkflowAutomation\Tests\TestCase;
 
-pest()->extends(TestCase::class)->in('Unit', 'Feature');
+uses(TestCase::class)->in('Unit', 'Feature');

@@ -65,6 +65,7 @@ it('calls boot on all plugins via bootPlugins()', function () {
         app(NodeRegistry::class),
         new NodeRunner,
         app(\Aftandilmmd\WorkflowAutomation\Contracts\ExpressionEvaluatorInterface::class),
+        app(\Aftandilmmd\WorkflowAutomation\Credentials\CredentialTypeRegistry::class),
     );
     $plugin = new RegisterTrackingPlugin;
 
@@ -81,6 +82,7 @@ it('only boots plugins once', function () {
         app(NodeRegistry::class),
         new NodeRunner,
         app(\Aftandilmmd\WorkflowAutomation\Contracts\ExpressionEvaluatorInterface::class),
+        app(\Aftandilmmd\WorkflowAutomation\Credentials\CredentialTypeRegistry::class),
     );
     $plugin = new RegisterTrackingPlugin;
 
