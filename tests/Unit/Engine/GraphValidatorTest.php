@@ -67,7 +67,7 @@ it('fails when a node uses an unregistered key', function () {
 
     $errors = $this->validator->errors($workflow);
 
-    expect($errors)->toHaveCount(fn ($c) => $c >= 1);
+    expect(count($errors))->toBeGreaterThanOrEqual(1);
     expect(collect($errors)->first(fn ($e) => str_contains($e, 'unregistered key')))->not->toBeNull();
 });
 

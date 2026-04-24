@@ -94,7 +94,7 @@ it('duplicates a workflow with nodes and edges', function () {
     ]);
 
     $this->postJson("/workflow-engine/workflows/{$workflow->id}/duplicate")
-        ->assertOk()
+        ->assertCreated()
         ->assertJsonPath('data.name', 'Original (Copy)')
         ->assertJsonPath('data.is_active', false)
         ->assertJsonCount(2, 'data.nodes')
