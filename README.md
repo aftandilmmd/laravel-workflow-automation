@@ -1,5 +1,7 @@
 # Laravel Workflow Automation
 
+[![Laravel Compatibility](https://badge.laravel.cloud/badge/aftandilmmd/laravel-workflow-automation)](https://packagist.org/packages/aftandilmmd/laravel-workflow-automation)
+
 > [!WARNING]
 > This package is under active development and is not yet recommended for production use. APIs, database schemas, and features may change.
 
