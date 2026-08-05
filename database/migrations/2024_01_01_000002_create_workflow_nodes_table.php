@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('type', 50);
             $table->string('node_key', 100);
             $table->string('name')->nullable();
-            $table->json('config')->default('{}');
+            $table->json('config');
             $table->integer('position_x')->default(0);
             $table->integer('position_y')->default(0);
             $table->timestamps();
