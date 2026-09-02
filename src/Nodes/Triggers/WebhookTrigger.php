@@ -3,6 +3,7 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Triggers;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WebhookTriggerNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\TriggerInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
@@ -10,7 +11,7 @@ use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Enums\WebhookAuthType;
 
-#[AsWorkflowNode(key: 'webhook', type: NodeType::Trigger, label: 'Webhook')]
+#[AsWorkflowNode(key: 'webhook', type: NodeType::Trigger, label: 'Webhook', builder: WebhookTriggerNode::class)]
 class WebhookTrigger implements TriggerInterface
 {
     use \Aftandilmmd\WorkflowAutomation\Nodes\HasDocumentation;

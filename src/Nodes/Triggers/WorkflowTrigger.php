@@ -3,6 +3,7 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Triggers;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WorkflowTriggerNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\TriggerInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
@@ -10,7 +11,7 @@ use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Enums\WorkflowTriggerOn;
 use Aftandilmmd\WorkflowAutomation\Nodes\HasDocumentation;
 
-#[AsWorkflowNode(key: 'workflow', type: NodeType::Trigger, label: 'Workflow Trigger')]
+#[AsWorkflowNode(key: 'workflow', type: NodeType::Trigger, label: 'Workflow Trigger', builder: WorkflowTriggerNode::class)]
 class WorkflowTrigger implements TriggerInterface
 {
     use HasDocumentation;
