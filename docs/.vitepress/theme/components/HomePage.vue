@@ -123,35 +123,31 @@ const tabs = [
 
 const codeExamples = {
   trigger: `use App\\Models\\Order;
+use Aftandilmmd\\WorkflowAutomation\\Builders\\Triggers\\ModelEventTriggerNode;
+use Aftandilmmd\\WorkflowAutomation\\Enums\\ModelEvent;
 
 // Define what starts the workflow
 $trigger = $workflow->addNode(
-    'Order Placed',
-    'model_event',
-    [
-        'model'  => Order::class,
-        'events' => ['created'],
-    ]
+    ModelEventTriggerNode::make()
+        ->title('Order Placed')
+        ->model(Order::class)
+        ->events([ModelEvent::Created])
 );`,
   action: `// Add actions that run automatically
 $sendMail = $workflow->addNode(
-    'Confirm Order',
-    'send_mail',
-    [
-        'to'      => '{{ item.email }}',
-        'subject' => 'Order #{{ item.id }} confirmed',
-        'body'    => 'Thanks for your purchase!',
-    ]
+    SendMailNode::make()
+        ->title('Confirm Order')
+        ->to('{{ item.email }}')
+        ->subject('Order #{{ item.id }} confirmed')
+        ->body('Thanks for your purchase!')
 );
 
 $notify = $workflow->addNode(
-    'Notify Team',
-    'send_notification',
-    [
-        'notification_class'  => NewOrderNotification::class,
-        'notifiable_class'    => User::class,
-        'notifiable_id'       => '{{ item.user_id }}',
-    ]
+    SendNotificationNode::make()
+        ->title('Notify Team')
+        ->notificationClass(NewOrderNotification::class)
+        ->notifiableClass(User::class)
+        ->notifiableId('{{ item.user_id }}')
 );`,
   connect: `// Wire nodes together & activate
 $trigger->connect($sendMail);

@@ -112,16 +112,26 @@ foreach ($run->nodeRuns as $nodeRun) {
 ## Using the Facade
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
 use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
 
 $wf = Workflow::create(['name' => 'Welcome Email']);
 
-$trigger  = Workflow::addNode($wf, 'manual', name: 'Start');
-$sendMail = Workflow::addNode($wf, 'send_mail', [
-    'to'      => '{{ item.email }}',
-    'subject' => 'Welcome, {{ item.name }}!',
-    'body'    => 'Hi {{ item.name }}, thanks for joining!',
-], name: 'Send Welcome');
+$trigger = Workflow::addNode(
+    $wf,
+    ManualTriggerNode::make()
+        ->title('Start')
+);
+
+$sendMail = Workflow::addNode(
+    $wf,
+    SendMailNode::make()
+        ->title('Send Welcome')
+        ->to('{{ item.email }}')
+        ->subject('Welcome, {{ item.name }}!')
+        ->body('Hi {{ item.name }}, thanks for joining!')
+);
 
 Workflow::connect($trigger, $sendMail);
 Workflow::activate($wf);

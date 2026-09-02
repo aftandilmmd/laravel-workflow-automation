@@ -225,18 +225,33 @@ $workflow->start($payload);
 ```
 
 ```php [Facade]
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
 use Aftandilmmd\WorkflowAutomation\Facades\Workflow;
 
 $wf = Workflow::create(['name' => 'My Flow']);
-$trigger = Workflow::addNode($wf, 'manual', name: 'Start');
-$email = Workflow::addNode($wf, 'send_mail', [...], name: 'Send');
+
+$trigger = Workflow::addNode(
+    $wf,
+    ManualTriggerNode::make()
+        ->title('Start')
+);
+
+$email = Workflow::addNode(
+    $wf,
+    SendMailNode::make()
+        ->title('Send')
+    // ...
+);
+
 Workflow::connect($trigger, $email);
 Workflow::activate($wf);
 Workflow::run($wf, $payload);
 ```
 :::
 
-Both are fully supported. Examples in this documentation use the fluent API.
+Both are fully supported. Examples in this documentation use the fluent API with
+[node builders](/api/node-builders).
 
 ## Next Steps
 
