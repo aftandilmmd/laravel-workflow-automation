@@ -3,7 +3,7 @@
 ## Requirements
 
 - PHP 8.3+
-- Laravel 10, 11, 12, or 13
+- Laravel 12 or 13
 
 ## Install via Composer
 
