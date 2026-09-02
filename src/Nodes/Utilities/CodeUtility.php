@@ -3,6 +3,7 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Utilities;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\CodeNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\ExpressionEvaluatorInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
@@ -10,7 +11,7 @@ use Aftandilmmd\WorkflowAutomation\Enums\CodeMode;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 
-#[AsWorkflowNode(key: 'code', type: NodeType::Code, label: 'Code / Expression')]
+#[AsWorkflowNode(key: 'code', type: NodeType::Code, label: 'Code / Expression', builder: CodeNode::class)]
 class CodeUtility extends BaseNode
 {
     public function __construct(

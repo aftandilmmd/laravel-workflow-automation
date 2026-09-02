@@ -3,6 +3,7 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Utilities;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\FilterNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\NodeInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
@@ -10,7 +11,7 @@ use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
 use Aftandilmmd\WorkflowAutomation\Enums\FilterLogic;
 
-#[AsWorkflowNode(key: 'filter', type: NodeType::Utility, label: 'Filter')]
+#[AsWorkflowNode(key: 'filter', type: NodeType::Utility, label: 'Filter', builder: FilterNode::class)]
 class FilterUtility implements NodeInterface
 {
     use \Aftandilmmd\WorkflowAutomation\Nodes\HasDocumentation;
