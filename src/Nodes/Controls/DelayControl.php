@@ -3,6 +3,7 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Controls;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\DelayNode;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\DelayUnit;
@@ -12,7 +13,7 @@ use Aftandilmmd\WorkflowAutomation\Jobs\ResumeWorkflowJob;
 use Aftandilmmd\WorkflowAutomation\Models\WorkflowRun;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 
-#[AsWorkflowNode(key: 'delay', type: NodeType::Control, label: 'Delay')]
+#[AsWorkflowNode(key: 'delay', type: NodeType::Control, label: 'Delay', builder: DelayNode::class)]
 class DelayControl extends BaseNode
 {
     public function outputPorts(): array

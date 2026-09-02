@@ -3,6 +3,7 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Controls;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\WaitResumeNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\NodeInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
@@ -12,7 +13,7 @@ use Aftandilmmd\WorkflowAutomation\Jobs\ResumeWorkflowJob;
 use Aftandilmmd\WorkflowAutomation\Models\WorkflowRun;
 use Illuminate\Support\Str;
 
-#[AsWorkflowNode(key: 'wait_resume', type: NodeType::Control, label: 'Wait / Resume')]
+#[AsWorkflowNode(key: 'wait_resume', type: NodeType::Control, label: 'Wait / Resume', builder: WaitResumeNode::class)]
 class WaitResumeControl implements NodeInterface
 {
     use \Aftandilmmd\WorkflowAutomation\Nodes\HasDocumentation;
