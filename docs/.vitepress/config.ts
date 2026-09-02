@@ -22,7 +22,9 @@ const referenceSection = {
   collapsed: false,
   items: [
     { text: 'PHP API', link: '/api/php-api' },
+    { text: 'Node Builders', link: '/api/node-builders' },
     { text: 'REST Endpoints', link: '/api/rest-endpoints' },
+    { text: 'Array API (low-level)', link: '/api/array-api' },
     { text: 'Configuration', link: '/configuration' },
     { text: 'Events', link: '/events' },
     { text: 'Artisan Commands', link: '/commands' },
