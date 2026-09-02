@@ -6,6 +6,7 @@ use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
+use Aftandilmmd\WorkflowAutomation\Enums\StickyColor;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 
 #[AsWorkflowNode(key: 'sticky_note', type: NodeType::Annotation, label: 'Sticky Note')]
@@ -15,7 +16,7 @@ class StickyNote extends BaseNode
     {
         return [
             ['key' => 'content', 'type' => 'textarea', 'label' => 'Content'],
-            ['key' => 'color', 'type' => 'select', 'label' => 'Color', 'options' => ['yellow', 'blue', 'green', 'pink', 'purple'], 'default' => 'yellow'],
+            ['key' => 'color', 'type' => 'select', 'label' => 'Color', 'options' => array_column(StickyColor::cases(), 'value'), 'default' => StickyColor::Yellow->value],
         ];
     }
 

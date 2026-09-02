@@ -5,6 +5,7 @@ namespace Aftandilmmd\WorkflowAutomation\Nodes\Actions;
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
+use Aftandilmmd\WorkflowAutomation\Enums\MailSendMode;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 use Illuminate\Support\Facades\Mail;
@@ -15,7 +16,7 @@ class SendMailAction extends BaseNode
     public static function configSchema(): array
     {
         return [
-            ['key' => 'send_mode', 'type' => 'select', 'label' => 'Send Mode', 'required' => true, 'options' => ['inline', 'mailable']],
+            ['key' => 'send_mode', 'type' => 'select', 'label' => 'Send Mode', 'required' => true, 'options' => array_column(MailSendMode::cases(), 'value')],
 
             // Inline mode fields
             ['key' => 'to', 'type' => 'string', 'label' => 'To (comma-separated)', 'required' => true, 'supports_expression' => true, 'show_when' => ['key' => 'send_mode', 'value' => 'inline']],

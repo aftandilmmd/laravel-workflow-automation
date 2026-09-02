@@ -8,6 +8,7 @@ use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+use Aftandilmmd\WorkflowAutomation\Enums\FilterLogic;
 
 #[AsWorkflowNode(key: 'filter', type: NodeType::Utility, label: 'Filter')]
 class FilterUtility implements NodeInterface
@@ -32,7 +33,7 @@ class FilterUtility implements NodeInterface
                 ['key' => 'operator', 'type' => 'select', 'label' => 'Operator', 'options' => array_column(ConditionOperator::cases(), 'value')],
                 ['key' => 'value', 'type' => 'string', 'label' => 'Value'],
             ]],
-            ['key' => 'logic', 'type' => 'select', 'label' => 'Logic', 'options' => ['and', 'or'], 'required' => false],
+            ['key' => 'logic', 'type' => 'select', 'label' => 'Logic', 'options' => array_column(FilterLogic::cases(), 'value'), 'required' => false],
         ];
     }
 

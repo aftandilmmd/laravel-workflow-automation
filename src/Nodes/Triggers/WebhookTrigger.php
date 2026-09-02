@@ -6,7 +6,9 @@ use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\TriggerInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
+use Aftandilmmd\WorkflowAutomation\Enums\WebhookAuthType;
 
 #[AsWorkflowNode(key: 'webhook', type: NodeType::Trigger, label: 'Webhook')]
 class WebhookTrigger implements TriggerInterface
@@ -27,11 +29,26 @@ class WebhookTrigger implements TriggerInterface
     {
         return [
             ['key' => 'path', 'type' => 'string', 'label' => 'Webhook Path (auto-generated UUID)', 'required' => false, 'readonly' => true],
-            ['key' => 'method', 'type' => 'select', 'label' => 'HTTP Method', 'options' => ['GET', 'POST', 'PUT', 'PATCH'], 'required' => true],
-            ['key' => 'auth_type', 'type' => 'select', 'label' => 'Authentication', 'options' => ['none', 'basic', 'bearer', 'header_key'], 'required' => true],
+            ['key' => 'method', 'type' => 'select', 'label' => 'HTTP Method', 'options' => self::methodOptions(), 'required' => true],
+            ['key' => 'auth_type', 'type' => 'select', 'label' => 'Authentication', 'options' => array_column(WebhookAuthType::cases(), 'value'), 'required' => true],
             ['key' => 'credential_id', 'type' => 'credential', 'label' => 'Credential', 'required' => false, 'credential_types' => ['bearer_token', 'basic_auth', 'header_auth'], 'show_when' => ['key' => 'auth_type', 'value' => ['basic', 'bearer', 'header_key']]],
             ['key' => 'auth_value', 'type' => 'string', 'label' => 'Auth Value (legacy)', 'required' => false, 'description' => 'Use Credential field above instead for encrypted storage.', 'show_when' => ['key' => 'auth_type', 'value' => ['basic', 'bearer', 'header_key']]],
         ];
+    }
+
+    /**
+     * Webhooks accept a subset of the HTTP methods.
+     *
+     * @return string[]
+     */
+    private static function methodOptions(): array
+    {
+        return array_column([
+            HttpMethod::Get,
+            HttpMethod::Post,
+            HttpMethod::Put,
+            HttpMethod::Patch,
+        ], 'value');
     }
 
     public static function outputSchema(): array

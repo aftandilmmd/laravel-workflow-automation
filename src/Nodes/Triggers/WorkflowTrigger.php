@@ -7,6 +7,7 @@ use Aftandilmmd\WorkflowAutomation\Contracts\TriggerInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
+use Aftandilmmd\WorkflowAutomation\Enums\WorkflowTriggerOn;
 use Aftandilmmd\WorkflowAutomation\Nodes\HasDocumentation;
 
 #[AsWorkflowNode(key: 'workflow', type: NodeType::Trigger, label: 'Workflow Trigger')]
@@ -29,9 +30,9 @@ class WorkflowTrigger implements TriggerInterface
         return [
             ['key' => 'source_workflow_id', 'type' => 'workflow_select', 'label' => 'Source Workflow (leave empty for any)', 'required' => false],
             ['key' => 'trigger_on', 'type' => 'select', 'label' => 'Trigger When', 'required' => true, 'options' => [
-                ['value' => 'completed', 'label' => 'Completed'],
-                ['value' => 'failed', 'label' => 'Failed'],
-                ['value' => 'any', 'label' => 'Completed or Failed'],
+                ['value' => WorkflowTriggerOn::Completed->value, 'label' => 'Completed'],
+                ['value' => WorkflowTriggerOn::Failed->value, 'label' => 'Failed'],
+                ['value' => WorkflowTriggerOn::Any->value, 'label' => 'Completed or Failed'],
             ]],
         ];
     }
