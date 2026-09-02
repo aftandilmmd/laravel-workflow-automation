@@ -5,7 +5,7 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2026-09-02
 
 ### Added
 
@@ -36,3 +36,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   working.
 - Adding nodes with a node key and config array. It still works, but the builder API is the
   recommended path and the array form will likely be removed in a future release.
+
+[0.2.0]: https://github.com/aftandilmmd/laravel-workflow-automation/compare/v0.1.8...v0.2.0
