@@ -73,6 +73,48 @@ Schedule::command('workflow:clean-runs')->daily();
 ```
 :::
 
+## workflow:make-node-builder
+
+Generate a fluent [node builder](/api/node-builders) class from a node's config schema.
+
+```bash
+php artisan workflow:make-node-builder {node}
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `node` | Registered node key, e.g. `slack_message` |
+
+**Options:**
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--class` | node key in PascalCase + `Node` | Generated class name |
+| `--namespace` | `App\Workflows\Builders` | Namespace of the generated class |
+| `--path` | `app/Workflows/Builders` | Target directory |
+| `--force` | — | Overwrite an existing file |
+
+**Examples:**
+
+```bash
+php artisan workflow:make-node-builder slack_message
+
+php artisan workflow:make-node-builder slack_message \
+    --namespace="Acme\SlackPlugin\Builders" \
+    --path=packages/slack-plugin/src/Builders
+```
+
+**Output:**
+
+```
+Builder created: app/Workflows/Builders/SlackMessageNode.php
+```
+
+The generated class has one setter per config key, boolean fields default to `true`, and
+select fields list their allowed values in the docblock.
+
 ## workflow:validate
 
 Validate a workflow graph and print any errors.

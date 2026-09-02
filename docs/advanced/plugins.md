@@ -307,6 +307,39 @@ Plugin nodes must use one of the existing `NodeType` values:
 | `Control` | Your node controls flow (loops, delays, etc.) |
 | `Utility` | General-purpose nodes |
 
+## Shipping Builders
+
+Ship a [node builder](/api/node-builders) with every node your plugin registers so users get
+autocomplete and validation instead of raw config arrays.
+
+```php
+#[AsWorkflowNode(
+    key: 'slack_message',
+    type: NodeType::Action,
+    label: 'Slack Message',
+    builder: SlackMessageNode::class,
+)]
+class SlackMessageAction extends BaseNode { /* ... */ }
+```
+
+```bash
+# generate the builder from your config schema
+php artisan workflow:make-node-builder slack_message \
+    --namespace="Acme\SlackPlugin\Builders" \
+    --path=packages/slack-plugin/src/Builders
+```
+
+Ship the enums for your select fields too, and build the schema options from them:
+
+```php
+['key' => 'priority', 'type' => 'select', 'label' => 'Priority',
+ 'options' => array_column(SlackPriority::cases(), 'value')],
+```
+
+Builders and enums live in your package, so nothing in the core needs to change. Nodes
+without a builder still work — users reach them through `GenericNode`. See
+[Custom Nodes](./custom-nodes.md#node-builders) for the naming conventions.
+
 ## WorkflowAutomation Facade
 
 ```php
