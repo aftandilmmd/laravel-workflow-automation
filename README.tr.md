@@ -14,8 +14,8 @@ Otomasyon akışlarını canvas üzerine node'ları sürükleyerek kurun — ya 
 
 </div>
 
-> [!WARNING]
-> Bu paket aktif geliştirme aşamasındadır ve henüz production kullanımı için önerilmemektedir. API'ler, veritabanı şemaları ve özellikler değişebilir.
+> [!NOTE]
+> 1.0 öncesi. Paket test edilmiş durumda ve bugün kullanılabilir, ancak API minor sürümler arasında değişebilir. Sürüm kısıtını sabitleyin (`^0.2`) ve yükseltmeden önce [changelog](CHANGELOG.md)'a bakın.
 
 ![Workflow Editor](docs/screenshots/workflow-editor.png)
 

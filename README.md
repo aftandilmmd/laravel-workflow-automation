@@ -14,8 +14,8 @@ English | **[Türkçe](README.tr.md)**
 
 </div>
 
-> [!WARNING]
-> This package is under active development and is not yet recommended for production use. APIs, database schemas, and features may change.
+> [!NOTE]
+> Pre-1.0. The package is tested and usable today, but the API may still change between minor releases. Pin your constraint (`^0.2`) and check the [changelog](CHANGELOG.md) before upgrading.
 
 ![Workflow Editor](docs/screenshots/workflow-editor.png)
 
