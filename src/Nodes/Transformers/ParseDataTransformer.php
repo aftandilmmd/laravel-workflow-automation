@@ -3,13 +3,14 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Transformers;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\ParseDataNode;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Enums\ParseFormat;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 
-#[AsWorkflowNode(key: 'parse_data', type: NodeType::Transformer, label: 'Parse Data')]
+#[AsWorkflowNode(key: 'parse_data', type: NodeType::Transformer, label: 'Parse Data', builder: ParseDataNode::class)]
 class ParseDataTransformer extends BaseNode
 {
     public static function configSchema(): array

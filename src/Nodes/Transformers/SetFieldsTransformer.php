@@ -3,12 +3,13 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Transformers;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\SetFieldsNode;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 
-#[AsWorkflowNode(key: 'set_fields', type: NodeType::Transformer, label: 'Set Fields')]
+#[AsWorkflowNode(key: 'set_fields', type: NodeType::Transformer, label: 'Set Fields', builder: SetFieldsNode::class)]
 class SetFieldsTransformer extends BaseNode
 {
     public static function configSchema(): array

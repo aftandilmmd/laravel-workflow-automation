@@ -3,13 +3,14 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Conditions;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\SwitchNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\NodeInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
 
-#[AsWorkflowNode(key: 'switch', type: NodeType::Condition, label: 'Switch')]
+#[AsWorkflowNode(key: 'switch', type: NodeType::Condition, label: 'Switch', builder: SwitchNode::class)]
 class SwitchCondition implements NodeInterface
 {
     use \Aftandilmmd\WorkflowAutomation\Nodes\HasDocumentation;

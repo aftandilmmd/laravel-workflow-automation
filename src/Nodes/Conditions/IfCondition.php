@@ -3,13 +3,14 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Conditions;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\IfConditionNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\NodeInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
 
-#[AsWorkflowNode(key: 'if_condition', type: NodeType::Condition, label: 'IF Condition')]
+#[AsWorkflowNode(key: 'if_condition', type: NodeType::Condition, label: 'IF Condition', builder: IfConditionNode::class)]
 class IfCondition implements NodeInterface
 {
     use \Aftandilmmd\WorkflowAutomation\Nodes\HasDocumentation;
