@@ -48,12 +48,16 @@ For each input item:
 ## Example
 
 ```php
-$dispatch = $workflow->addNode('Generate Invoice', 'dispatch_job', [
-    'job_class' => 'App\\Jobs\\GenerateInvoicePdf',
-    'queue'     => 'pdfs',
-    'delay'     => 5,
-    'with_item' => true,
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\DispatchJobNode;
+
+$dispatch = $workflow->addNode(
+    DispatchJobNode::make()
+        ->title('Generate Invoice')
+        ->jobClass('App\\Jobs\\GenerateInvoicePdf')
+        ->queue('pdfs')
+        ->delay(5)
+        ->withItem()
+);
 ```
 
 Your job class when `with_item` is enabled:

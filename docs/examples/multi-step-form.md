@@ -53,6 +53,13 @@ Collect data across multiple form steps using a workflow that pauses between eac
 ## Workflow Setup
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\MergeNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\WaitResumeNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\SetFieldsNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\MergeMode;
+
 // app/Console/Commands/SetupMultiStepForm.php
 
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
@@ -68,40 +75,53 @@ class SetupMultiStepForm extends Command
         $workflow = Workflow::create(['name' => 'Multi-Step Form Wizard']);
 
         // 1. Manual trigger — starts the form process with metadata
-        $trigger = $workflow->addNode('Start Form', 'manual');
+        $trigger = $workflow->addNode(
+            ManualTriggerNode::make()
+                ->title('Start Form')
+        );
 
         // 2. Wait for Step 1 — user submits personal information
-        $step1 = $workflow->addNode('Step 1: Personal Info', 'wait_resume', [
-            'timeout_seconds' => 1800, // 30 minutes
-        ]);
+        $step1 = $workflow->addNode(
+            WaitResumeNode::make()
+                ->title('Step 1: Personal Info')
+                ->timeoutSeconds(1800)
+        );
 
         // 3. Normalize the data from Step 1
-        $normalize = $workflow->addNode('Normalize Data', 'set_fields', [
-            'fields' => [
-                'email'        => '{{ lower(item.email) }}',
-                'name'         => '{{ item.name }}',
-                'submitted_at' => '{{ now() }}',
-            ],
-            'keep_existing' => true,
-        ]);
+        $normalize = $workflow->addNode(
+            SetFieldsNode::make()
+                ->title('Normalize Data')
+                ->fields([
+                            'email'        => '{{ lower(item.email) }}',
+                            'name'         => '{{ item.name }}',
+                            'submitted_at' => '{{ now() }}',
+                        ])
+                ->keepExisting()
+        );
 
         // 4. Wait for Step 2 — user submits payment information
-        $step2 = $workflow->addNode('Step 2: Payment Info', 'wait_resume', [
-            'timeout_seconds' => 1800, // 30 minutes
-        ]);
+        $step2 = $workflow->addNode(
+            WaitResumeNode::make()
+                ->title('Step 2: Payment Info')
+                ->timeoutSeconds(1800)
+        );
 
         // 5. Merge all collected data into a single item
-        $merge = $workflow->addNode('Combine Data', 'merge', [
-            'mode' => 'wait_all',
-        ]);
+        $merge = $workflow->addNode(
+            MergeNode::make()
+                ->title('Combine Data')
+                ->mode(MergeMode::WaitAll)
+        );
 
         // 6. Send confirmation email with all collected data
-        $confirmation = $workflow->addNode('Confirmation Email', 'send_mail', [
-            'to'      => '{{ item.email }}',
-            'subject' => 'Registration complete, {{ item.name }}!',
-            'body'    => 'Hi {{ item.name }},\n\nYour registration is complete. Here is a summary:\n\nName: {{ item.name }}\nEmail: {{ item.email }}\nPlan: {{ item.plan }}\nCard ending in: {{ item.card_last4 }}\n\nThank you for signing up!',
-            'is_html' => false,
-        ]);
+        $confirmation = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Confirmation Email')
+                ->to('{{ item.email }}')
+                ->subject('Registration complete, {{ item.name }}!')
+                ->body('Hi {{ item.name }},\n\nYour registration is complete. Here is a summary:\n\nName: {{ item.name }}\nEmail: {{ item.email }}\nPlan: {{ item.plan }}\nCard ending in: {{ item.card_last4 }}\n\nThank you for signing up!')
+                ->isHtml(false)
+        );
 
         // Wire the graph
         $trigger->connect($step1);

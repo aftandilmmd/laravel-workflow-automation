@@ -10,11 +10,10 @@ $workflow->addNode('Welcome Email', 'send_mail', [
 ]);
 ```
 
-::: info Supported, and staying
-This API is fully supported and there are no plans to remove it — the editor, the REST API
-and the MCP server all use it internally. For new PHP code, prefer the
-[Node Builder API](./node-builders.md): it gives you autocomplete, enums, and validation
-before the node is saved.
+::: warning Not recommended
+Use the [Node Builder API](./node-builders.md) instead: autocomplete, enums, and config
+validation before the node is saved. The array API still works and existing code keeps
+running, but it will likely be removed in a future release.
 :::
 
 ## Signatures
@@ -35,7 +34,12 @@ one workflow:
 
 ```php
 $trigger = $workflow->addNode('Start', 'manual');
-$mail = $workflow->addNode(SendMailNode::make()->to('...')->subject('...')->body('...'));
+$mail = $workflow->addNode(
+    SendMailNode::make()
+        ->to('...')
+        ->subject('...')
+        ->body('...')
+);
 ```
 
 ## Differences from the builder API
@@ -47,8 +51,7 @@ $mail = $workflow->addNode(SendMailNode::make()->to('...')->subject('...')->body
 | Config validation on save | No | Yes, against the node's config schema |
 | Unknown keys | Stored as-is | Rejected with a suggestion |
 
-Config keys are not validated in the array API on purpose: existing workflows and seeds may
-carry extra keys, and rejecting them would break them.
+Config keys are not validated in the array API: whatever you pass is stored as-is.
 
 ## Config keys
 

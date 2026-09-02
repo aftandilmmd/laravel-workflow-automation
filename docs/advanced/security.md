@@ -265,12 +265,18 @@ Webhook endpoints are public by design (external services need to reach them). T
 ### Best Practices
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WebhookTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+use Aftandilmmd\WorkflowAutomation\Enums\WebhookAuthType;
+
 // Always set auth on production webhooks
-$trigger = $workflow->addNode('Stripe Webhook', 'webhook', [
-    'method'     => 'POST',
-    'auth_type'  => 'bearer',
-    'auth_value' => config('services.stripe.webhook_secret'),
-]);
+$trigger = $workflow->addNode(
+    WebhookTriggerNode::make()
+        ->title('Stripe Webhook')
+        ->method(HttpMethod::Post)
+        ->authType(WebhookAuthType::Bearer)
+        ->authValue(config('services.stripe.webhook_secret'))
+);
 ```
 
 - **Always enable authentication** on production webhooks — `none` should only be used for development

@@ -60,13 +60,17 @@ Dropped: [{revenue: 0}]
 ## Example
 
 ```php
-$filter = $workflow->addNode('Active High-Value', 'filter', [
-    'conditions' => [
-        ['field' => 'status',  'operator' => 'equals',       'value' => 'active'],
-        ['field' => 'revenue', 'operator' => 'greater_than', 'value' => '100'],
-    ],
-    'logic' => 'and',
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\FilterNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+use Aftandilmmd\WorkflowAutomation\Enums\FilterLogic;
+
+$filter = $workflow->addNode(
+    FilterNode::make()
+        ->title('Active High-Value')
+        ->condition('status', ConditionOperator::Equals, 'active')
+        ->condition('revenue', ConditionOperator::GreaterThan, '100')
+        ->logic(FilterLogic::And)
+);
 ```
 
 ## Input / Output Example

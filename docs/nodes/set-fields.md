@@ -41,14 +41,18 @@ See [Node Builders](../api/node-builders.md) for the conventions shared by all b
 ## Example
 
 ```php
-$setFields = $workflow->addNode('Normalize', 'set_fields', [
-    'fields' => [
-        'processed_at' => '{{ now() }}',
-        'email'        => '{{ lower(item.email) }}',
-        'full_name'    => '{{ item.first_name + " " + item.last_name }}',
-    ],
-    'keep_existing' => true,
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\SetFieldsNode;
+
+$setFields = $workflow->addNode(
+    SetFieldsNode::make()
+        ->title('Normalize')
+        ->fields([
+            'processed_at' => '{{ now() }}',
+            'email'        => '{{ lower(item.email) }}',
+            'full_name'    => '{{ item.first_name + " " + item.last_name }}',
+        ])
+        ->keepExisting()
+);
 ```
 
 ## Input / Output Example

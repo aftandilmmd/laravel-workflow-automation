@@ -47,6 +47,17 @@ Generate and email a daily sales report every morning at 8 AM. The workflow fetc
 ## Workflow Setup
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ScheduleTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\AggregateNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\FilterNode;
+use Aftandilmmd\WorkflowAutomation\Enums\AggregateFunction;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+use Aftandilmmd\WorkflowAutomation\Enums\FilterLogic;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+use Aftandilmmd\WorkflowAutomation\Enums\ScheduleInterval;
+
 // app/Console/Commands/SetupDailyReport.php
 
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
@@ -62,45 +73,51 @@ class SetupDailyReport extends Command
         $workflow = Workflow::create(['name' => 'Daily Sales Report']);
 
         // 1. Schedule trigger — fires every day at 8:00 AM
-        $trigger = $workflow->addNode('Daily 8 AM', 'schedule', [
-            'interval_type' => 'custom_cron',
-            'cron'          => '0 8 * * *',
-        ]);
+        $trigger = $workflow->addNode(
+            ScheduleTriggerNode::make()
+                ->title('Daily 8 AM')
+                ->intervalType(ScheduleInterval::CustomCron)
+                ->cron('0 8 * * *')
+        );
 
         // 2. Fetch sales data from the internal API
-        $fetchSales = $workflow->addNode('Fetch Sales', 'http_request', [
-            'url'              => 'https://api.internal.com/sales?date={{ date_format(now(), "Y-m-d") }}',
-            'method'           => 'GET',
-            'headers'          => ['Authorization' => 'Bearer {{ env.INTERNAL_API_TOKEN }}'],
-            'timeout'          => 30,
-            'include_response' => true,
-        ]);
+        $fetchSales = $workflow->addNode(
+            HttpRequestNode::make()
+                ->title('Fetch Sales')
+                ->url('https://api.internal.com/sales?date={{ date_format(now(), "Y-m-d") }}')
+                ->method(HttpMethod::Get)
+                ->headers(['Authorization' => 'Bearer {{ env.INTERNAL_API_TOKEN }}'])
+                ->timeout(30)
+                ->includeResponse()
+        );
 
         // 3. Filter out departments with zero revenue
-        $filter = $workflow->addNode('Non-Zero Revenue', 'filter', [
-            'conditions' => [
-                ['field' => 'revenue', 'operator' => 'greater_than', 'value' => '0'],
-            ],
-            'logic' => 'and',
-        ]);
+        $filter = $workflow->addNode(
+            FilterNode::make()
+                ->title('Non-Zero Revenue')
+                ->condition('revenue', ConditionOperator::GreaterThan, '0')
+                ->logic(FilterLogic::And)
+        );
 
         // 4. Aggregate revenue and order count by department
-        $aggregate = $workflow->addNode('By Department', 'aggregate', [
-            'group_by'   => 'department',
-            'operations' => [
-                ['field' => 'revenue',     'function' => 'sum', 'alias' => 'total_revenue'],
-                ['field' => 'order_count', 'function' => 'sum', 'alias' => 'total_orders'],
-                ['field' => 'revenue',     'function' => 'avg', 'alias' => 'avg_order_value'],
-            ],
-        ]);
+        $aggregate = $workflow->addNode(
+            AggregateNode::make()
+                ->title('By Department')
+                ->groupBy('department')
+                ->operation('revenue', AggregateFunction::Sum, 'total_revenue')
+                ->operation('order_count', AggregateFunction::Sum, 'total_orders')
+                ->operation('revenue', AggregateFunction::Avg, 'avg_order_value')
+        );
 
         // 5. Email the aggregated report
-        $report = $workflow->addNode('Send Report', 'send_mail', [
-            'to'      => 'leadership@company.com',
-            'subject' => 'Daily Sales Report — {{ date_format(now(), "M d, Y") }}',
-            'body'    => 'Department: {{ item.department }}\nTotal Revenue: ${{ item.total_revenue }}\nTotal Orders: {{ item.total_orders }}\nAvg Order Value: ${{ item.avg_order_value }}',
-            'is_html' => false,
-        ]);
+        $report = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Send Report')
+                ->to('leadership@company.com')
+                ->subject('Daily Sales Report — {{ date_format(now(), "M d, Y") }}')
+                ->body('Department: {{ item.department }}\nTotal Revenue: ${{ item.total_revenue }}\nTotal Orders: {{ item.total_orders }}\nAvg Order Value: ${{ item.avg_order_value }}')
+                ->isHtml(false)
+        );
 
         // Wire the graph
         $trigger->connect($fetchSales);

@@ -47,11 +47,15 @@ For each input item:
 ## Example
 
 ```php
-$notify = $workflow->addNode('Notify Customer', 'send_notification', [
-    'notification_class' => 'App\\Notifications\\OrderShipped',
-    'notifiable_class'   => 'App\\Models\\User',
-    'notifiable_id'      => '{{ item.user_id }}',
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendNotificationNode;
+
+$notify = $workflow->addNode(
+    SendNotificationNode::make()
+        ->title('Notify Customer')
+        ->notificationClass('App\\Notifications\\OrderShipped')
+        ->notifiableClass('App\\Models\\User')
+        ->notifiableId('{{ item.user_id }}')
+);
 ```
 
 Your notification class receives the full item:

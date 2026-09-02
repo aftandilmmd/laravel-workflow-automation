@@ -61,6 +61,15 @@ Automatically screen new posts for prohibited keywords as soon as they are creat
 ## Workflow Setup
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\DispatchJobNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\UpdateModelNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\IfConditionNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ModelEventTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\CodeNode;
+use Aftandilmmd\WorkflowAutomation\Enums\CodeMode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+use Aftandilmmd\WorkflowAutomation\Enums\ModelEvent;
+
 // app/Console/Commands/SetupContentModeration.php
 
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
@@ -76,53 +85,65 @@ class SetupContentModeration extends Command
         $workflow = Workflow::create(['name' => 'Content Moderation']);
 
         // 1. Trigger when a new Post model is created
-        $trigger = $workflow->addNode('Post Created', 'model_event', [
-            'model'  => 'App\\Models\\Post',
-            'events' => ['created'],
-        ]);
+        $trigger = $workflow->addNode(
+            ModelEventTriggerNode::make()
+                ->title('Post Created')
+                ->model('App\\Models\\Post')
+                ->events([ModelEvent::Created])
+        );
 
         // 2. Code node — check for prohibited keywords
         //    In transform mode, the expression result is stored as `_result` on the item
-        $keywordCheck = $workflow->addNode('Check Keywords', 'code', [
-            'mode'       => 'transform',
-            'expression' => 'contains(lower(item.content), "spam") || contains(lower(item.content), "scam") || contains(lower(item.content), "buy now") || contains(lower(item.content), "free money")',
-        ]);
+        $keywordCheck = $workflow->addNode(
+            CodeNode::make()
+                ->title('Check Keywords')
+                ->mode(CodeMode::Transform)
+                ->expression('contains(lower(item.content), "spam") || contains(lower(item.content), "scam") || contains(lower(item.content), "buy now") || contains(lower(item.content), "free money")')
+        );
 
         // 3. IF condition — check whether the code node flagged the post
-        $flaggedCheck = $workflow->addNode('Flagged?', 'if_condition', [
-            'field'    => '{{ item._result }}',
-            'operator' => 'equals',
-            'value'    => 'true',
-        ]);
+        $flaggedCheck = $workflow->addNode(
+            IfConditionNode::make()
+                ->title('Flagged?')
+                ->field('{{ item._result }}')
+                ->operator(ConditionOperator::Equals)
+                ->value('true')
+        );
 
         // 4a. Flagged — dispatch an AI moderation job for deeper analysis
-        $aiReview = $workflow->addNode('AI Moderation', 'dispatch_job', [
-            'job_class' => 'App\\Jobs\\AIModerationJob',
-            'queue'     => 'moderation',
-            'with_item' => true,
-        ]);
+        $aiReview = $workflow->addNode(
+            DispatchJobNode::make()
+                ->title('AI Moderation')
+                ->jobClass('App\\Jobs\\AIModerationJob')
+                ->queue('moderation')
+                ->withItem()
+        );
 
         // 4a-cont. Update the post status to "under_review"
-        $underReview = $workflow->addNode('Set Under Review', 'update_model', [
-            'model'      => 'App\\Models\\Post',
-            'find_by'    => 'id',
-            'find_value' => '{{ item.id }}',
-            'fields'     => [
-                'status'      => 'under_review',
-                'flagged_at'  => '{{ now() }}',
-            ],
-        ]);
+        $underReview = $workflow->addNode(
+            UpdateModelNode::make()
+                ->title('Set Under Review')
+                ->model('App\\Models\\Post')
+                ->findBy('id')
+                ->findValue('{{ item.id }}')
+                ->fields([
+                            'status'      => 'under_review',
+                            'flagged_at'  => '{{ now() }}',
+                        ])
+        );
 
         // 4b. Clean — publish the post immediately
-        $publish = $workflow->addNode('Publish Post', 'update_model', [
-            'model'      => 'App\\Models\\Post',
-            'find_by'    => 'id',
-            'find_value' => '{{ item.id }}',
-            'fields'     => [
-                'status'       => 'published',
-                'published_at' => '{{ now() }}',
-            ],
-        ]);
+        $publish = $workflow->addNode(
+            UpdateModelNode::make()
+                ->title('Publish Post')
+                ->model('App\\Models\\Post')
+                ->findBy('id')
+                ->findValue('{{ item.id }}')
+                ->fields([
+                            'status'       => 'published',
+                            'published_at' => '{{ now() }}',
+                        ])
+        );
 
         // Wire the graph
         $trigger->connect($keywordCheck);

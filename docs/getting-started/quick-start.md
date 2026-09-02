@@ -26,25 +26,36 @@ $workflow = Workflow::create(['name' => 'Welcome Email']);
 ## Step 2 — Add Nodes
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendNotificationNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ModelEventTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ModelEvent;
+
 // Trigger — fires when a new User is created
-$trigger = $workflow->addNode('User Registered', 'model_event', [
-    'model'  => User::class,
-    'events' => ['created'],
-]);
+$trigger = $workflow->addNode(
+    ModelEventTriggerNode::make()
+        ->title('User Registered')
+        ->model(User::class)
+        ->events([ModelEvent::Created])
+);
 
 // Action — sends a welcome email to the user
-$sendMail = $workflow->addNode('Send Welcome', 'send_mail', [
-    'to'      => '{{ item.email }}',
-    'subject' => 'Welcome, {{ item.name }}!',
-    'body'    => 'Thanks for joining us.',
-]);
+$sendMail = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Send Welcome')
+        ->to('{{ item.email }}')
+        ->subject('Welcome, {{ item.name }}!')
+        ->body('Thanks for joining us.')
+);
 
 // Action — notifies the admin about the new signup
-$notifyAdmin = $workflow->addNode('Notify Admin', 'send_notification', [
-    'notification_class' => \App\Notifications\NewUserSignup::class,
-    'notifiable_class'   => User::class,
-    'notifiable_id'      => '{{ item.id }}',
-]);
+$notifyAdmin = $workflow->addNode(
+    SendNotificationNode::make()
+        ->title('Notify Admin')
+        ->notificationClass(\App\Notifications\NewUserSignup::class)
+        ->notifiableClass(User::class)
+        ->notifiableId('{{ item.id }}')
+);
 ```
 
 The `{{ item.field }}` syntax is the [Expression Engine](/expressions/) — it resolves values from the current data item at runtime.

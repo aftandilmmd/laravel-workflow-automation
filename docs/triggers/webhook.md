@@ -87,30 +87,39 @@ External Service (Stripe, GitHub, etc.)
 Using a credential (recommended):
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\SwitchNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WebhookTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+
 $workflow = Workflow::create(['name' => 'Stripe Payment Handler']);
 
 // First, create a credential via API or code:
 // WorkflowCredential::create(['name' => 'Stripe Webhook', 'type' => 'bearer_token', 'data' => ['token' => 'whsec_xxx']]);
 
-$trigger = $workflow->addNode('Stripe Hook', 'webhook', [
-    'method'        => 'POST',
-    'auth_type'     => 'bearer',
-    'credential_id' => 1, // references the stored credential
-]);
+$trigger = $workflow->addNode(
+    WebhookTriggerNode::make()
+        ->title('Stripe Hook')
+        ->method(HttpMethod::Post)
+        ->authType(WebhookAuthType::Bearer)
+        ->credentialId(1)
+);
 
-$router = $workflow->addNode('Route Event', 'switch', [
-    'field' => '{{ item.type }}',
-    'cases' => [
-        ['port' => 'case_success', 'operator' => 'equals', 'value' => 'payment_intent.succeeded'],
-        ['port' => 'case_failed',  'operator' => 'equals', 'value' => 'payment_intent.payment_failed'],
-    ],
-]);
+$router = $workflow->addNode(
+    SwitchNode::make()
+        ->title('Route Event')
+        ->field('{{ item.type }}')
+        ->case('case_success', ConditionOperator::Equals, 'payment_intent.succeeded')
+        ->case('case_failed', ConditionOperator::Equals, 'payment_intent.payment_failed')
+);
 
-$receipt = $workflow->addNode('Send Receipt', 'send_mail', [
-    'to'      => '{{ item.data.object.receipt_email }}',
-    'subject' => 'Payment received',
-    'body'    => 'Thank you for your payment.',
-]);
+$receipt = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Send Receipt')
+        ->to('{{ item.data.object.receipt_email }}')
+        ->subject('Payment received')
+        ->body('Thank you for your payment.')
+);
 
 $trigger->connect($router);
 $router->connect($receipt, 'case_success');

@@ -15,6 +15,15 @@ Her sabah saat 8'de dünkü satış verilerini çek, sıfır gelirli kayıtları
 Bir artisan komutu oluşturup `php artisan workflow:setup-daily-report` ile bir kez çalıştırın.
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ScheduleTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\AggregateNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\FilterNode;
+use Aftandilmmd\WorkflowAutomation\Enums\AggregateFunction;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+
 // app/Console/Commands/SetupDailyReport.php
 
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
@@ -29,35 +38,41 @@ class SetupDailyReport extends Command
     {
         $workflow = Workflow::create(['name' => 'Daily Sales Report']);
 
-        $trigger = $workflow->addNode('Daily 8 AM', 'schedule', [
-            'interval_type' => 'custom_cron',
-            'cron'          => '0 8 * * *', // Her gün saat 8:00'de
-        ]);
+        $trigger = $workflow->addNode(
+            ScheduleTriggerNode::make()
+                ->title('Daily 8 AM')
+                ->intervalType(ScheduleInterval::CustomCron)
+                ->cron('0 8 * * *')
+        );
 
-        $fetchData = $workflow->addNode('Fetch Sales', 'http_request', [
-            'url'    => 'https://analytics.example.com/api/daily-sales?date={{ date_format(now(), "Y-m-d") }}',
-            'method' => 'GET',
-        ]);
+        $fetchData = $workflow->addNode(
+            HttpRequestNode::make()
+                ->title('Fetch Sales')
+                ->url('https://analytics.example.com/api/daily-sales?date={{ date_format(now(), "Y-m-d") }}')
+                ->method(HttpMethod::Get)
+        );
 
-        $filterNonZero = $workflow->addNode('Non-Zero Revenue', 'filter', [
-            'conditions' => [
-                ['field' => 'revenue', 'operator' => 'greater_than', 'value' => 0],
-            ],
-        ]);
+        $filterNonZero = $workflow->addNode(
+            FilterNode::make()
+                ->title('Non-Zero Revenue')
+                ->condition('revenue', ConditionOperator::GreaterThan, 0)
+        );
 
-        $aggregate = $workflow->addNode('By Department', 'aggregate', [
-            'group_by'   => 'department',
-            'operations' => [
-                ['field' => 'revenue',      'function' => 'sum', 'alias' => 'total_revenue'],
-                ['field' => 'transactions', 'function' => 'sum', 'alias' => 'total_transactions'],
-            ],
-        ]);
+        $aggregate = $workflow->addNode(
+            AggregateNode::make()
+                ->title('By Department')
+                ->groupBy('department')
+                ->operation('revenue', AggregateFunction::Sum, 'total_revenue')
+                ->operation('transactions', AggregateFunction::Sum, 'total_transactions')
+        );
 
-        $sendReport = $workflow->addNode('Email Report', 'send_mail', [
-            'to'      => 'team@company.com',
-            'subject' => 'Daily Sales Report — {{ date_format(now(), "M d, Y") }}',
-            'body'    => 'Günlük satış raporu ektedir.',
-        ]);
+        $sendReport = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Email Report')
+                ->to('team@company.com')
+                ->subject('Daily Sales Report — {{ date_format(now(), "M d, Y") }}')
+                ->body('Günlük satış raporu ektedir.')
+        );
 
         // Edge'ler
         $trigger->connect($fetchData);
@@ -114,23 +129,32 @@ Bu kadar. Her gün saat 8:00'de workflow otomatik çalışır.
 ## Diğer Zamanlama Seçenekleri
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ScheduleTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ScheduleInterval;
+
 // Her 5 dakikada bir
-$workflow->addNode('Every 5 Min', 'schedule', [
-    'interval_type'  => 'minutes',
-    'interval_value' => 5,
-]);
+$workflow->addNode(
+    ScheduleTriggerNode::make()
+        ->title('Every 5 Min')
+        ->intervalType(ScheduleInterval::Minutes)
+        ->intervalValue(5)
+);
 
 // Hafta içi saat 9'da
-$workflow->addNode('Weekday 9 AM', 'schedule', [
-    'interval_type' => 'custom_cron',
-    'cron'          => '0 9 * * 1-5',
-]);
+$workflow->addNode(
+    ScheduleTriggerNode::make()
+        ->title('Weekday 9 AM')
+        ->intervalType(ScheduleInterval::CustomCron)
+        ->cron('0 9 * * 1-5')
+);
 
 // Her ayın ilk günü
-$workflow->addNode('Monthly', 'schedule', [
-    'interval_type' => 'custom_cron',
-    'cron'          => '0 0 1 * *',
-]);
+$workflow->addNode(
+    ScheduleTriggerNode::make()
+        ->title('Monthly')
+        ->intervalType(ScheduleInterval::CustomCron)
+        ->cron('0 0 1 * *')
+);
 ```
 
 ## Gösterilen Kavramlar

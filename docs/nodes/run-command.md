@@ -49,21 +49,31 @@ See [Node Builders](../api/node-builders.md) for the conventions shared by all b
 Runs Laravel artisan commands via `Artisan::call()`. The command runs synchronously within the current process — no separate shell is spawned.
 
 ```php
-$node = $workflow->addNode('Clear Cache', 'run_command', [
-    'command_type' => 'artisan',
-    'command'      => 'cache:clear',
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\RunCommandNode;
+use Aftandilmmd\WorkflowAutomation\Enums\CommandType;
+
+$node = $workflow->addNode(
+    RunCommandNode::make()
+        ->title('Clear Cache')
+        ->commandType(CommandType::Artisan)
+        ->command('cache:clear')
+);
 ```
 
 With arguments:
 
 ```php
-$node = $workflow->addNode('Seed Users', 'run_command', [
-    'command_type'   => 'artisan',
-    'command'        => 'db:seed',
-    'arguments'      => ['--class' => 'UserSeeder'],
-    'include_output' => true,
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\RunCommandNode;
+use Aftandilmmd\WorkflowAutomation\Enums\CommandType;
+
+$node = $workflow->addNode(
+    RunCommandNode::make()
+        ->title('Seed Users')
+        ->commandType(CommandType::Artisan)
+        ->command('db:seed')
+        ->arguments(['--class' => 'UserSeeder'])
+        ->includeOutput()
+);
 ```
 
 ### Shell Commands
@@ -71,26 +81,36 @@ $node = $workflow->addNode('Seed Users', 'run_command', [
 Runs shell commands via Symfony Process. The command runs in a separate process with its own timeout.
 
 ```php
-$node = $workflow->addNode('Run Backup', 'run_command', [
-    'command_type'      => 'shell',
-    'command'           => './scripts/db-backup.sh',
-    'timeout'           => 120,
-    'working_directory' => '/var/www/app',
-    'include_output'    => true,
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\RunCommandNode;
+use Aftandilmmd\WorkflowAutomation\Enums\CommandType;
+
+$node = $workflow->addNode(
+    RunCommandNode::make()
+        ->title('Run Backup')
+        ->commandType(CommandType::Shell)
+        ->command('./scripts/db-backup.sh')
+        ->timeout(120)
+        ->workingDirectory('/var/www/app')
+        ->includeOutput()
+);
 ```
 
 The `arguments` field sets environment variables for shell commands:
 
 ```php
-$node = $workflow->addNode('Export Data', 'run_command', [
-    'command_type' => 'shell',
-    'command'      => './scripts/export.sh',
-    'arguments'    => [
-        'DB_NAME'   => '{{ item.database }}',
-        'OUTPUT_DIR' => '/tmp/exports',
-    ],
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\RunCommandNode;
+use Aftandilmmd\WorkflowAutomation\Enums\CommandType;
+
+$node = $workflow->addNode(
+    RunCommandNode::make()
+        ->title('Export Data')
+        ->commandType(CommandType::Shell)
+        ->command('./scripts/export.sh')
+        ->arguments([
+            'DB_NAME'   => '{{ item.database }}',
+            'OUTPUT_DIR' => '/tmp/exports',
+        ])
+);
 ```
 
 ## Security
@@ -138,26 +158,40 @@ WORKFLOW_SHELL_ENABLED=false
 ## Example: Cache Clear After Deploy
 
 ```php
-$trigger = $workflow->addNode('Deploy Webhook', 'webhook', [
-    'method'     => 'POST',
-    'auth_type'  => 'bearer',
-    'auth_value' => config('services.deploy.webhook_secret'),
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\RunCommandNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WebhookTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\CommandType;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+use Aftandilmmd\WorkflowAutomation\Enums\WebhookAuthType;
 
-$clearCache = $workflow->addNode('Clear Cache', 'run_command', [
-    'command_type' => 'artisan',
-    'command'      => 'cache:clear',
-]);
+$trigger = $workflow->addNode(
+    WebhookTriggerNode::make()
+        ->title('Deploy Webhook')
+        ->method(HttpMethod::Post)
+        ->authType(WebhookAuthType::Bearer)
+        ->authValue(config('services.deploy.webhook_secret'))
+);
 
-$clearConfig = $workflow->addNode('Clear Config', 'run_command', [
-    'command_type' => 'artisan',
-    'command'      => 'config:clear',
-]);
+$clearCache = $workflow->addNode(
+    RunCommandNode::make()
+        ->title('Clear Cache')
+        ->commandType(CommandType::Artisan)
+        ->command('cache:clear')
+);
 
-$restartQueue = $workflow->addNode('Restart Queue', 'run_command', [
-    'command_type' => 'artisan',
-    'command'      => 'queue:restart',
-]);
+$clearConfig = $workflow->addNode(
+    RunCommandNode::make()
+        ->title('Clear Config')
+        ->commandType(CommandType::Artisan)
+        ->command('config:clear')
+);
+
+$restartQueue = $workflow->addNode(
+    RunCommandNode::make()
+        ->title('Restart Queue')
+        ->commandType(CommandType::Artisan)
+        ->command('queue:restart')
+);
 
 $trigger->connect($clearCache);
 $clearCache->connect($clearConfig);
@@ -167,30 +201,40 @@ $clearConfig->connect($restartQueue);
 ## Example: Database Backup with Error Handling
 
 ```php
-$backup = $workflow->addNode('DB Backup', 'run_command', [
-    'command_type'      => 'shell',
-    'command'           => 'mysqldump -u $DB_USER -p$DB_PASS $DB_NAME > /backups/$(date +%Y%m%d).sql',
-    'arguments'         => [
-        'DB_USER' => '{{ env.DB_USERNAME }}',
-        'DB_PASS' => '{{ env.DB_PASSWORD }}',
-        'DB_NAME' => '{{ env.DB_DATABASE }}',
-    ],
-    'timeout'           => 300,
-    'include_output'    => true,
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\RunCommandNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\ErrorHandlerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\CommandType;
+use Aftandilmmd\WorkflowAutomation\Enums\ErrorRoute;
 
-$errorHandler = $workflow->addNode('Handle Error', 'error_handler', [
-    'rules'         => [
-        ['match' => 'timeout', 'route' => 'retry'],
-    ],
-    'default_route' => 'notify',
-]);
+$backup = $workflow->addNode(
+    RunCommandNode::make()
+        ->title('DB Backup')
+        ->commandType(CommandType::Shell)
+        ->command('mysqldump -u $DB_USER -p$DB_PASS $DB_NAME > /backups/$(date +%Y%m%d).sql')
+        ->arguments([
+            'DB_USER' => '{{ env.DB_USERNAME }}',
+            'DB_PASS' => '{{ env.DB_PASSWORD }}',
+            'DB_NAME' => '{{ env.DB_DATABASE }}',
+        ])
+        ->timeout(300)
+        ->includeOutput()
+);
 
-$notify = $workflow->addNode('Alert Team', 'send_mail', [
-    'to'      => 'ops@company.com',
-    'subject' => 'Backup failed',
-    'body'    => 'Database backup failed: {{ item.error }}',
-]);
+$errorHandler = $workflow->addNode(
+    ErrorHandlerNode::make()
+        ->title('Handle Error')
+        ->rule('timeout', ErrorRoute::Retry)
+        ->defaultRoute(ErrorRoute::Notify)
+);
+
+$notify = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Alert Team')
+        ->to('ops@company.com')
+        ->subject('Backup failed')
+        ->body('Database backup failed: {{ item.error }}')
+);
 
 $backup->connect($errorHandler, 'error');
 $errorHandler->connect($notify, 'notify');

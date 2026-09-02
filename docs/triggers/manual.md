@@ -90,14 +90,22 @@ $workflow->startAsync([
 ## Example: Order Confirmation
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
+
 $workflow = Workflow::create(['name' => 'Order Confirmation']);
 
-$trigger = $workflow->addNode('New Order', 'manual');
-$email   = $workflow->addNode('Confirm', 'send_mail', [
-    'to'      => '{{ item.email }}',
-    'subject' => 'Order #{{ item.order_id }} received',
-    'body'    => 'Thank you for your order of ${{ item.total }}.',
-]);
+$trigger = $workflow->addNode(
+    ManualTriggerNode::make()
+        ->title('New Order')
+);
+$email   = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Confirm')
+        ->to('{{ item.email }}')
+        ->subject('Order #{{ item.order_id }} received')
+        ->body('Thank you for your order of ${{ item.total }}.')
+);
 
 $trigger->connect($email);
 $workflow->activate();

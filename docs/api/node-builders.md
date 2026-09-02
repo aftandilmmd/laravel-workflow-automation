@@ -16,8 +16,8 @@ $welcome = $workflow->addNode(
 );
 ```
 
-The [array API](./array-api.md) still works and is not going away — builders are simply the
-recommended way to write new PHP code.
+The [array API](./array-api.md) still works, but it is no longer recommended and will
+likely be removed in a future release.
 
 ## Conventions
 
@@ -113,12 +113,19 @@ only required in inline mode.
 
 ```php
 // one node
-$node = $workflow->addNode(SendMailNode::make()->to('a@b.test')->subject('Hi')->body('...'));
+$node = $workflow->addNode(
+    SendMailNode::make()
+        ->to('a@b.test')
+        ->subject('Hi')
+        ->body('...')
+);
 
 // several, in order
 [$trigger, $prepare] = $workflow->addNodes(
-    ManualTriggerNode::make()->title('Start'),
-    SetFieldsNode::make()->field('source', 'api'),
+    ManualTriggerNode::make()
+        ->title('Start'),
+    SetFieldsNode::make()
+        ->field('source', 'api'),
 );
 
 // from an existing node (same workflow)
@@ -156,7 +163,9 @@ ScheduleTriggerNode::make()
     ->intervalValue(6);
 
 ScheduleTriggerNode::every(6, ScheduleInterval::Hours);   // same thing
-ScheduleTriggerNode::make()->cron('0 9 * * 1');           // switches to cron mode
+// switches to cron mode
+ScheduleTriggerNode::make()
+    ->cron('0 9 * * 1');
 
 WebhookTriggerNode::make()
     ->title('Stripe Webhook')
@@ -227,7 +236,8 @@ RunCommandNode::artisan('reports:generate')
     ->timeout(120)
     ->includeOutput();
 
-RunCommandNode::shell('rsync -a ./storage /backup')->workingDirectory('/var/www/app');
+RunCommandNode::shell('rsync -a ./storage /backup')
+    ->workingDirectory('/var/www/app');
 
 AiNode::make()
     ->prompt('Classify this ticket: {{ item.body }}')
@@ -288,12 +298,18 @@ use Aftandilmmd\WorkflowAutomation\Builders\Controls\{
 };
 use Aftandilmmd\WorkflowAutomation\Enums\{MergeMode, DelayUnit, ErrorRoute};
 
-LoopNode::make()->sourceField('{{ item.lines }}');            // ports: loop_item / loop_done
+// ports: loop_item / loop_done
+LoopNode::make()
+    ->sourceField('{{ item.lines }}');
 
-MergeNode::make()->mode(MergeMode::WaitAll);
+MergeNode::make()
+    ->mode(MergeMode::WaitAll);
 
-DelayNode::minutes(15);                                        // also ::seconds(), ::hours()
-DelayNode::make()->delayType(DelayUnit::Hours)->delayValue(2);
+DelayNode::minutes(15);   // also ::seconds(), ::hours()
+
+DelayNode::make()
+    ->delayType(DelayUnit::Hours)
+    ->delayValue(2);
 
 SubWorkflowNode::make()
     ->workflow($fulfillmentWorkflow)
@@ -306,7 +322,9 @@ ErrorHandlerNode::make()
     ->rule('/validation/i', ErrorRoute::Ignore)
     ->defaultRoute(ErrorRoute::Notify);
 
-WaitResumeNode::make()->timeoutSeconds(86400);                 // ports: resume / timeout
+// ports: resume / timeout
+WaitResumeNode::make()
+    ->timeoutSeconds(86400);
 ```
 
 ## Utilities and annotations
@@ -366,7 +384,8 @@ use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 $workflow = Workflow::create(['name' => 'User Onboarding']);
 
 $trigger = $workflow->addNode(
-    ModelEventTriggerNode::make()->title('User Created')
+    ModelEventTriggerNode::make()
+        ->title('User Created')
         ->model(User::class)
         ->events([ModelEvent::Created])
 );
@@ -377,13 +396,19 @@ $vip = $workflow->addNode(
 );
 
 $vipMail = $workflow->addNode(
-    SendMailNode::make()->title('VIP Welcome')
-        ->to('{{ item.email }}')->subject('Welcome, VIP!')->body('...')
+    SendMailNode::make()
+        ->title('VIP Welcome')
+        ->to('{{ item.email }}')
+        ->subject('Welcome, VIP!')
+        ->body('...')
 );
 
 $mail = $workflow->addNode(
-    SendMailNode::make()->title('Generic Welcome')
-        ->to('{{ item.email }}')->subject('Welcome!')->body('...')
+    SendMailNode::make()
+        ->title('Generic Welcome')
+        ->to('{{ item.email }}')
+        ->subject('Welcome!')
+        ->body('...')
 );
 
 $trigger->connect($vip);

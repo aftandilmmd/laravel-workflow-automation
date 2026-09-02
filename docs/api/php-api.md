@@ -39,7 +39,10 @@ see [Node Builders](./node-builders.md) for the full list.
 use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
 use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
 
-$trigger = $workflow->addNode(ManualTriggerNode::make()->title('Start'));
+$trigger = $workflow->addNode(
+    ManualTriggerNode::make()
+        ->title('Start')
+);
 
 $email = $workflow->addNode(
     SendMailNode::make()

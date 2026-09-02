@@ -64,14 +64,17 @@ Leave `group_by` empty to produce a single summary item for all inputs.
 ## Example
 
 ```php
-$aggregate = $workflow->addNode('Summarize', 'aggregate', [
-    'group_by'   => 'department',
-    'operations' => [
-        ['field' => 'revenue', 'function' => 'sum',   'alias' => 'total_revenue'],
-        ['field' => 'id',      'function' => 'count', 'alias' => 'transaction_count'],
-        ['field' => 'revenue', 'function' => 'avg',   'alias' => 'avg_revenue'],
-    ],
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\AggregateNode;
+use Aftandilmmd\WorkflowAutomation\Enums\AggregateFunction;
+
+$aggregate = $workflow->addNode(
+    AggregateNode::make()
+        ->title('Summarize')
+        ->groupBy('department')
+        ->operation('revenue', AggregateFunction::Sum, 'total_revenue')
+        ->operation('id', AggregateFunction::Count, 'transaction_count')
+        ->operation('revenue', AggregateFunction::Avg, 'avg_revenue')
+);
 ```
 
 ## Input / Output Example

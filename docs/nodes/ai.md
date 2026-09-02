@@ -10,6 +10,8 @@ Send prompts to any AI provider from within a workflow using [Laravel AI](https:
 
 ```php
 use Aftandilmmd\WorkflowAutomation\Builders\Actions\AiNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\SwitchNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
 use Aftandilmmd\WorkflowAutomation\Enums\AiProvider;
 
 AiNode::make()
@@ -76,16 +78,25 @@ WORKFLOW_AI_MAX_TOKENS=4096
 ## Example: Content Summarization
 
 ```php
-$trigger = $workflow->addNode('Start', 'manual');
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\AiNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\AiProvider;
 
-$summarize = $workflow->addNode('Summarize', 'ai', [
-    'prompt'        => 'Summarize this article in 2 sentences:\n\n{{ item.content }}',
-    'system_prompt' => 'You are a concise technical writer.',
-    'provider'      => 'anthropic',
-    'model'         => 'claude-sonnet-4-5-20250514',
-    'max_tokens'    => 200,
-    'output_key'    => 'summary',
-]);
+$trigger = $workflow->addNode(
+    ManualTriggerNode::make()
+        ->title('Start')
+);
+
+$summarize = $workflow->addNode(
+    AiNode::make()
+        ->title('Summarize')
+        ->prompt('Summarize this article in 2 sentences:\n\n{{ item.content }}')
+        ->systemPrompt('You are a concise technical writer.')
+        ->provider(AiProvider::Anthropic)
+        ->model('claude-sonnet-4-5-20250514')
+        ->maxTokens(200)
+        ->outputKey('summary')
+);
 
 $trigger->connect($summarize);
 $workflow->activate();
@@ -99,29 +110,41 @@ $run = $workflow->start([
 ## Example: Sentiment Analysis Pipeline
 
 ```php
-$trigger = $workflow->addNode('Start', 'manual');
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\AiNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\SwitchNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
 
-$analyze = $workflow->addNode('Analyze Sentiment', 'ai', [
-    'prompt'        => 'Classify the sentiment of this review as positive, negative, or neutral. Reply with one word only.\n\nReview: {{ item.review }}',
-    'system_prompt' => 'You are a sentiment classifier. Reply with exactly one word: positive, negative, or neutral.',
-    'temperature'   => '0',
-    'output_key'    => 'sentiment',
-]);
+$trigger = $workflow->addNode(
+    ManualTriggerNode::make()
+        ->title('Start')
+);
 
-$route = $workflow->addNode('Route by Sentiment', 'switch', [
-    'field' => '{{ item.sentiment }}',
-    'cases' => [
-        ['value' => 'negative', 'port' => 'negative'],
-        ['value' => 'positive', 'port' => 'positive'],
-    ],
-    'default_port' => 'neutral',
-]);
+$analyze = $workflow->addNode(
+    AiNode::make()
+        ->title('Analyze Sentiment')
+        ->prompt('Classify the sentiment of this review as positive, negative, or neutral. Reply with one word only.\n\nReview: {{ item.review }}')
+        ->systemPrompt('You are a sentiment classifier. Reply with exactly one word: positive, negative, or neutral.')
+        ->temperature('0')
+        ->outputKey('sentiment')
+);
 
-$alert = $workflow->addNode('Alert Team', 'send_mail', [
-    'to'      => 'support@company.com',
-    'subject' => 'Negative review from {{ item.customer }}',
-    'body'    => '{{ item.review }}',
-]);
+$route = $workflow->addNode(
+    SwitchNode::make()
+        ->title('Route by Sentiment')
+        ->field('{{ item.sentiment }}')
+        ->case('negative', ConditionOperator::Equals, 'negative')
+        ->case('positive', ConditionOperator::Equals, 'positive')
+        ->fallthrough()
+);
+
+$alert = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Alert Team')
+        ->to('support@company.com')
+        ->subject('Negative review from {{ item.customer }}')
+        ->body('{{ item.review }}')
+);
 
 $trigger->connect($analyze);
 $analyze->connect($route);
@@ -133,22 +156,34 @@ $workflow->activate();
 ## Example: Bulk Email Personalization
 
 ```php
-$trigger = $workflow->addNode('Start', 'manual');
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\AiNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\AiProvider;
 
-$personalize = $workflow->addNode('Generate Email', 'ai', [
-    'prompt'        => 'Write a short personalized welcome email for {{ item.name }} who signed up as a {{ item.plan }} user. Include their name and mention one benefit of their plan.',
-    'system_prompt' => 'You write friendly, professional welcome emails. Keep them under 100 words.',
-    'provider'      => 'openai',
-    'model'         => 'gpt-4o-mini',
-    'max_tokens'    => 300,
-    'output_key'    => 'email_body',
-]);
+$trigger = $workflow->addNode(
+    ManualTriggerNode::make()
+        ->title('Start')
+);
 
-$send = $workflow->addNode('Send Welcome', 'send_mail', [
-    'to'      => '{{ item.email }}',
-    'subject' => 'Welcome to our platform, {{ item.name }}!',
-    'body'    => '{{ item.email_body }}',
-]);
+$personalize = $workflow->addNode(
+    AiNode::make()
+        ->title('Generate Email')
+        ->prompt('Write a short personalized welcome email for {{ item.name }} who signed up as a {{ item.plan }} user. Include their name and mention one benefit of their plan.')
+        ->systemPrompt('You write friendly, professional welcome emails. Keep them under 100 words.')
+        ->provider(AiProvider::OpenAi)
+        ->model('gpt-4o-mini')
+        ->maxTokens(300)
+        ->outputKey('email_body')
+);
+
+$send = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Send Welcome')
+        ->to('{{ item.email }}')
+        ->subject('Welcome to our platform, {{ item.name }}!')
+        ->body('{{ item.email_body }}')
+);
 
 $trigger->connect($personalize);
 $personalize->connect($send);
@@ -164,21 +199,31 @@ $run = $workflow->start([
 ## Example: Content Moderation with Error Handling
 
 ```php
-$trigger  = $workflow->addNode('Start', 'manual');
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\AiNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\ErrorHandlerNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ErrorRoute;
 
-$moderate = $workflow->addNode('Moderate Content', 'ai', [
-    'prompt'        => 'Review this user comment for harmful content. Reply with JSON: {"safe": true/false, "reason": "explanation"}\n\nComment: {{ item.comment }}',
-    'system_prompt' => 'You are a content moderator. Always reply with valid JSON.',
-    'temperature'   => '0',
-    'output_key'    => 'moderation',
-]);
+$trigger  = $workflow->addNode(
+    ManualTriggerNode::make()
+        ->title('Start')
+);
 
-$errorHandler = $workflow->addNode('Handle AI Error', 'error_handler', [
-    'rules'         => [
-        ['match' => 'rate limit', 'route' => 'retry'],
-    ],
-    'default_route' => 'log',
-]);
+$moderate = $workflow->addNode(
+    AiNode::make()
+        ->title('Moderate Content')
+        ->prompt('Review this user comment for harmful content. Reply with JSON: {"safe": true/false, "reason": "explanation"}\n\nComment: {{ item.comment }}')
+        ->systemPrompt('You are a content moderator. Always reply with valid JSON.')
+        ->temperature('0')
+        ->outputKey('moderation')
+);
+
+$errorHandler = $workflow->addNode(
+    ErrorHandlerNode::make()
+        ->title('Handle AI Error')
+        ->rule('rate limit', ErrorRoute::Retry)
+        ->defaultRoute('log')
+);
 
 $trigger->connect($moderate);
 $moderate->connect($errorHandler, 'error');

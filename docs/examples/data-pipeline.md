@@ -56,6 +56,21 @@ Receive raw CSV data via webhook, parse it, normalize fields, filter for active 
 ## Workflow Setup
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\LoopNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\ParseDataNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\SetFieldsNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WebhookTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\AggregateNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\FilterNode;
+use Aftandilmmd\WorkflowAutomation\Enums\AggregateFunction;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+use Aftandilmmd\WorkflowAutomation\Enums\FilterLogic;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+use Aftandilmmd\WorkflowAutomation\Enums\ParseFormat;
+use Aftandilmmd\WorkflowAutomation\Enums\WebhookAuthType;
+
 // app/Console/Commands/SetupDataPipeline.php
 
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
@@ -71,73 +86,85 @@ class SetupDataPipeline extends Command
         $workflow = Workflow::create(['name' => 'Data Transformation Pipeline']);
 
         // 1. Webhook receives the raw CSV payload
-        $trigger = $workflow->addNode('Receive CSV', 'webhook', [
-            'method'     => 'POST',
-            'auth_type'  => 'bearer',
-            'auth_value' => 'pipeline-secret-token',
-        ]);
+        $trigger = $workflow->addNode(
+            WebhookTriggerNode::make()
+                ->title('Receive CSV')
+                ->method(HttpMethod::Post)
+                ->authType(WebhookAuthType::Bearer)
+                ->authValue('pipeline-secret-token')
+        );
 
         // 2. Parse the CSV string into structured rows
-        $parse = $workflow->addNode('Parse CSV', 'parse_data', [
-            'source_field' => 'csv_body',
-            'format'       => 'csv',
-            'target_field' => 'records',
-        ]);
+        $parse = $workflow->addNode(
+            ParseDataNode::make()
+                ->title('Parse CSV')
+                ->sourceField('csv_body')
+                ->format(ParseFormat::Csv)
+                ->targetField('records')
+        );
 
         // 3. Normalize fields — lowercase emails, add a processed timestamp
-        $normalize = $workflow->addNode('Normalize Data', 'set_fields', [
-            'fields' => [
-                'records'      => '{{ item.records }}',
-                'processed_at' => '{{ now() }}',
-                'source'       => 'csv_import',
-            ],
-            'keep_existing' => true,
-        ]);
+        $normalize = $workflow->addNode(
+            SetFieldsNode::make()
+                ->title('Normalize Data')
+                ->fields([
+                            'records'      => '{{ item.records }}',
+                            'processed_at' => '{{ now() }}',
+                            'source'       => 'csv_import',
+                        ])
+                ->keepExisting()
+        );
 
         // 4. Filter to keep only active records
-        $filter = $workflow->addNode('Active Only', 'filter', [
-            'conditions' => [
-                ['field' => 'status', 'operator' => 'equals', 'value' => 'active'],
-            ],
-            'logic' => 'and',
-        ]);
+        $filter = $workflow->addNode(
+            FilterNode::make()
+                ->title('Active Only')
+                ->condition('status', ConditionOperator::Equals, 'active')
+                ->logic(FilterLogic::And)
+        );
 
         // 5. Loop through each active record
-        $loop = $workflow->addNode('Each Record', 'loop', [
-            'source_field' => 'records',
-        ]);
+        $loop = $workflow->addNode(
+            LoopNode::make()
+                ->title('Each Record')
+                ->sourceField('records')
+        );
 
         // 6. Sync each record to the external CRM API
-        $sync = $workflow->addNode('Sync to CRM', 'http_request', [
-            'url'    => 'https://crm.example.com/api/contacts/upsert',
-            'method' => 'POST',
-            'body'   => [
-                'email'  => '{{ item._loop_item.email }}',
-                'name'   => '{{ item._loop_item.name }}',
-                'phone'  => '{{ item._loop_item.phone }}',
-                'source' => '{{ item._loop_parent.source }}',
-            ],
-            'headers' => [
-                'Authorization' => 'Bearer {{ env.CRM_API_TOKEN }}',
-                'Content-Type'  => 'application/json',
-            ],
-            'timeout' => 10,
-        ]);
+        $sync = $workflow->addNode(
+            HttpRequestNode::make()
+                ->title('Sync to CRM')
+                ->url('https://crm.example.com/api/contacts/upsert')
+                ->method(HttpMethod::Post)
+                ->body([
+                            'email'  => '{{ item._loop_item.email }}',
+                            'name'   => '{{ item._loop_item.name }}',
+                            'phone'  => '{{ item._loop_item.phone }}',
+                            'source' => '{{ item._loop_parent.source }}',
+                        ])
+                ->headers([
+                            'Authorization' => 'Bearer {{ env.CRM_API_TOKEN }}',
+                            'Content-Type'  => 'application/json',
+                        ])
+                ->timeout(10)
+        );
 
         // 7. Aggregate sync results into summary counts
-        $aggregate = $workflow->addNode('Summarize', 'aggregate', [
-            'operations' => [
-                ['field' => 'email', 'function' => 'count', 'alias' => 'total_synced'],
-            ],
-        ]);
+        $aggregate = $workflow->addNode(
+            AggregateNode::make()
+                ->title('Summarize')
+                ->operation('email', AggregateFunction::Count, 'total_synced')
+        );
 
         // 8. Email the summary report
-        $report = $workflow->addNode('Send Report', 'send_mail', [
-            'to'      => 'data-team@company.com',
-            'subject' => 'CSV Import Complete — {{ item.total_synced }} records synced',
-            'body'    => 'The CSV data pipeline finished at {{ now() }}. Total records synced: {{ item.total_synced }}.',
-            'is_html' => false,
-        ]);
+        $report = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Send Report')
+                ->to('data-team@company.com')
+                ->subject('CSV Import Complete — {{ item.total_synced }} records synced')
+                ->body('The CSV data pipeline finished at {{ now() }}. Total records synced: {{ item.total_synced }}.')
+                ->isHtml(false)
+        );
 
         // Wire the graph
         $trigger->connect($parse);

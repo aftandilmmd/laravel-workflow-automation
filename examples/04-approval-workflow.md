@@ -19,6 +19,12 @@ When someone submits a purchase request over $1,000, the workflow pauses and wai
 Create an artisan command and run it once with `php artisan workflow:setup-approvals`.
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\IfConditionNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\WaitResumeNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+
 // app/Console/Commands/SetupApprovalWorkflow.php
 
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
@@ -33,51 +39,68 @@ class SetupApprovalWorkflow extends Command
     {
         $workflow = Workflow::create(['name' => 'Purchase Approval']);
 
-        $trigger = $workflow->addNode('New Request', 'manual');
+        $trigger = $workflow->addNode(
+            ManualTriggerNode::make()
+                ->title('New Request')
+        );
 
-        $checkAmount = $workflow->addNode('Needs Approval?', 'if_condition', [
-            'field'    => 'amount',
-            'operator' => 'greater_than',
-            'value'    => 1000,
-        ]);
+        $checkAmount = $workflow->addNode(
+            IfConditionNode::make()
+                ->title('Needs Approval?')
+                ->field('amount')
+                ->operator(ConditionOperator::GreaterThan)
+                ->value(1000)
+        );
 
         // ── High value path: wait for manager ─────────────────
 
-        $askManager = $workflow->addNode('Ask Manager', 'send_mail', [
-            'to'      => '{{ item.manager_email }}',
-            'subject' => 'Approval Required: ${{ item.amount }}',
-            'body'    => '{{ item.requester }} needs approval for: {{ item.description }}',
-        ]);
+        $askManager = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Ask Manager')
+                ->to('{{ item.manager_email }}')
+                ->subject('Approval Required: ${{ item.amount }}')
+                ->body('{{ item.requester }} needs approval for: {{ item.description }}')
+        );
 
-        $wait = $workflow->addNode('Wait for Decision', 'wait_resume', [
-            'timeout_seconds' => 259200, // 3 days
-        ]);
+        $wait = $workflow->addNode(
+            WaitResumeNode::make()
+                ->title('Wait for Decision')
+                ->timeoutSeconds(259200)
+        );
 
-        $checkDecision = $workflow->addNode('Approved?', 'if_condition', [
-            'field'    => 'approved',
-            'operator' => 'equals',
-            'value'    => true,
-        ]);
+        $checkDecision = $workflow->addNode(
+            IfConditionNode::make()
+                ->title('Approved?')
+                ->field('approved')
+                ->operator(ConditionOperator::Equals)
+                ->value(true)
+        );
 
-        $notifyApproved = $workflow->addNode('Notify Approved', 'send_mail', [
-            'to'      => '{{ item.requester_email }}',
-            'subject' => 'Purchase Approved',
-            'body'    => 'Your request for ${{ item.amount }} has been approved.',
-        ]);
+        $notifyApproved = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Notify Approved')
+                ->to('{{ item.requester_email }}')
+                ->subject('Purchase Approved')
+                ->body('Your request for ${{ item.amount }} has been approved.')
+        );
 
-        $notifyRejected = $workflow->addNode('Notify Rejected', 'send_mail', [
-            'to'      => '{{ item.requester_email }}',
-            'subject' => 'Purchase Rejected',
-            'body'    => 'Your request for ${{ item.amount }} was rejected. Reason: {{ item.reason }}',
-        ]);
+        $notifyRejected = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Notify Rejected')
+                ->to('{{ item.requester_email }}')
+                ->subject('Purchase Rejected')
+                ->body('Your request for ${{ item.amount }} was rejected. Reason: {{ item.reason }}')
+        );
 
         // ── Low value path: auto-approve ──────────────────────
 
-        $notifyAutoApproved = $workflow->addNode('Notify Auto-Approved', 'send_mail', [
-            'to'      => '{{ item.requester_email }}',
-            'subject' => 'Purchase Auto-Approved',
-            'body'    => 'Your request for ${{ item.amount }} was auto-approved (under $1,000).',
-        ]);
+        $notifyAutoApproved = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Notify Auto-Approved')
+                ->to('{{ item.requester_email }}')
+                ->subject('Purchase Auto-Approved')
+                ->body('Your request for ${{ item.amount }} was auto-approved (under $1,000).')
+        );
 
         // Edges
         $trigger->connect($checkAmount);

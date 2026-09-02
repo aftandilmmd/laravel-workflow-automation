@@ -347,14 +347,22 @@ class MyTrigger implements TriggerInterface
 ## Using Your Custom Node
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\GenericNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
+
 $workflow = Workflow::create(['name' => 'Alert Pipeline']);
 
-$trigger = $workflow->addNode('New Alert', 'manual');
-$slack   = $workflow->addNode('Notify Team', 'slack_message', [
-    'channel'     => '#alerts',
-    'message'     => 'Alert: {{ item.message }}',
-    'webhook_url' => 'https://hooks.slack.com/services/...',
-]);
+$trigger = $workflow->addNode(
+    ManualTriggerNode::make()
+        ->title('New Alert')
+);
+$slack   = $workflow->addNode(
+    GenericNode::make('slack_message')
+        ->title('Notify Team')
+        ->set('channel', '#alerts')
+        ->set('message', 'Alert: {{ item.message }}')
+        ->set('webhook_url', 'https://hooks.slack.com/services/...')
+);
 
 $trigger->connect($slack);
 $workflow->activate();

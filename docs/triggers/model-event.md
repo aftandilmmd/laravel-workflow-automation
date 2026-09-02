@@ -59,18 +59,26 @@ User::create(['name' => 'Alice', 'email' => 'alice@example.com'])
 ## Example: Welcome Email on User Creation
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ModelEventTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ModelEvent;
+
 $workflow = Workflow::create(['name' => 'User Onboarding']);
 
-$trigger = $workflow->addNode('User Created', 'model_event', [
-    'model'  => 'App\\Models\\User',
-    'events' => ['created'],
-]);
+$trigger = $workflow->addNode(
+    ModelEventTriggerNode::make()
+        ->title('User Created')
+        ->model('App\\Models\\User')
+        ->events([ModelEvent::Created])
+);
 
-$email = $workflow->addNode('Welcome Email', 'send_mail', [
-    'to'      => '{{ item.email }}',
-    'subject' => 'Welcome, {{ item.name }}!',
-    'body'    => 'Thanks for signing up.',
-]);
+$email = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Welcome Email')
+        ->to('{{ item.email }}')
+        ->subject('Welcome, {{ item.name }}!')
+        ->body('Thanks for signing up.')
+);
 
 $trigger->connect($email);
 $workflow->activate();
@@ -92,11 +100,16 @@ User::create([
 For `updated` events, you can limit the trigger to fire only when specific fields change:
 
 ```php
-$trigger = $workflow->addNode('Status Changed', 'model_event', [
-    'model'       => 'App\\Models\\Order',
-    'events'      => ['updated'],
-    'only_fields' => ['status'],
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ModelEventTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ModelEvent;
+
+$trigger = $workflow->addNode(
+    ModelEventTriggerNode::make()
+        ->title('Status Changed')
+        ->model('App\\Models\\Order')
+        ->events([ModelEvent::Updated])
+        ->onlyFields(['status'])
+);
 ```
 
 With this config, updating `$order->update(['notes' => '...'])` will **not** trigger the workflow. Only changes to the `status` field fire it.
@@ -104,33 +117,45 @@ With this config, updating `$order->update(['notes' => '...'])` will **not** tri
 ## Example: Track Order Status Changes
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\SwitchNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ModelEventTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+use Aftandilmmd\WorkflowAutomation\Enums\ModelEvent;
+
 $workflow = Workflow::create(['name' => 'Order Status Tracker']);
 
-$trigger = $workflow->addNode('Order Status Changed', 'model_event', [
-    'model'       => 'App\\Models\\Order',
-    'events'      => ['updated'],
-    'only_fields' => ['status'],
-]);
+$trigger = $workflow->addNode(
+    ModelEventTriggerNode::make()
+        ->title('Order Status Changed')
+        ->model('App\\Models\\Order')
+        ->events([ModelEvent::Updated])
+        ->onlyFields(['status'])
+);
 
-$router = $workflow->addNode('Route by Status', 'switch', [
-    'field' => '{{ item.status }}',
-    'cases' => [
-        ['port' => 'case_shipped',   'operator' => 'equals', 'value' => 'shipped'],
-        ['port' => 'case_cancelled', 'operator' => 'equals', 'value' => 'cancelled'],
-    ],
-]);
+$router = $workflow->addNode(
+    SwitchNode::make()
+        ->title('Route by Status')
+        ->field('{{ item.status }}')
+        ->case('case_shipped', ConditionOperator::Equals, 'shipped')
+        ->case('case_cancelled', ConditionOperator::Equals, 'cancelled')
+);
 
-$shippedEmail = $workflow->addNode('Shipped Email', 'send_mail', [
-    'to'      => '{{ item.customer_email }}',
-    'subject' => 'Order #{{ item.id }} shipped!',
-    'body'    => 'Your order is on its way.',
-]);
+$shippedEmail = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Shipped Email')
+        ->to('{{ item.customer_email }}')
+        ->subject('Order #{{ item.id }} shipped!')
+        ->body('Your order is on its way.')
+);
 
-$cancelledEmail = $workflow->addNode('Cancelled Email', 'send_mail', [
-    'to'      => '{{ item.customer_email }}',
-    'subject' => 'Order #{{ item.id }} cancelled',
-    'body'    => 'Your order has been cancelled.',
-]);
+$cancelledEmail = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Cancelled Email')
+        ->to('{{ item.customer_email }}')
+        ->subject('Order #{{ item.id }} cancelled')
+        ->body('Your order has been cancelled.')
+);
 
 $trigger->connect($router);
 $router->connect($shippedEmail, 'case_shipped');

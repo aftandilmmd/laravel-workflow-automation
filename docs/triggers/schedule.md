@@ -18,7 +18,9 @@ ScheduleTriggerNode::make()
     ->intervalValue(6);
 
 ScheduleTriggerNode::every(6, ScheduleInterval::Hours);   // same thing
-ScheduleTriggerNode::make()->cron('0 9 * * 1');           // switches to cron mode
+// switches to cron mode
+ScheduleTriggerNode::make()
+    ->cron('0 9 * * 1');
 ```
 
 See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
@@ -75,39 +77,55 @@ Every minute, the scheduler runs:
 ### Custom Cron Expressions
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ScheduleTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ScheduleInterval;
+
 // Every day at 8:00 AM
-$trigger = $workflow->addNode('Daily 8 AM', 'schedule', [
-    'interval_type' => 'custom_cron',
-    'cron'          => '0 8 * * *',
-]);
+$trigger = $workflow->addNode(
+    ScheduleTriggerNode::make()
+        ->title('Daily 8 AM')
+        ->intervalType(ScheduleInterval::CustomCron)
+        ->cron('0 8 * * *')
+);
 
 // Weekdays at 9:00 AM
-$trigger = $workflow->addNode('Weekday 9 AM', 'schedule', [
-    'interval_type' => 'custom_cron',
-    'cron'          => '0 9 * * 1-5',
-]);
+$trigger = $workflow->addNode(
+    ScheduleTriggerNode::make()
+        ->title('Weekday 9 AM')
+        ->intervalType(ScheduleInterval::CustomCron)
+        ->cron('0 9 * * 1-5')
+);
 
 // First day of each month at midnight
-$trigger = $workflow->addNode('Monthly', 'schedule', [
-    'interval_type' => 'custom_cron',
-    'cron'          => '0 0 1 * *',
-]);
+$trigger = $workflow->addNode(
+    ScheduleTriggerNode::make()
+        ->title('Monthly')
+        ->intervalType(ScheduleInterval::CustomCron)
+        ->cron('0 0 1 * *')
+);
 ```
 
 ### Simple Intervals
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ScheduleTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ScheduleInterval;
+
 // Every 5 minutes
-$trigger = $workflow->addNode('Every 5 Min', 'schedule', [
-    'interval_type'  => 'minutes',
-    'interval_value' => 5,
-]);
+$trigger = $workflow->addNode(
+    ScheduleTriggerNode::make()
+        ->title('Every 5 Min')
+        ->intervalType(ScheduleInterval::Minutes)
+        ->intervalValue(5)
+);
 
 // Every 2 hours
-$trigger = $workflow->addNode('Every 2 Hours', 'schedule', [
-    'interval_type'  => 'hours',
-    'interval_value' => 2,
-]);
+$trigger = $workflow->addNode(
+    ScheduleTriggerNode::make()
+        ->title('Every 2 Hours')
+        ->intervalType(ScheduleInterval::Hours)
+        ->intervalValue(2)
+);
 ```
 
 ## Cron Expression Reference

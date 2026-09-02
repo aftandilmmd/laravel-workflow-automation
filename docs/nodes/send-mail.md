@@ -94,36 +94,51 @@ The node iterates over every input item and sends one email per item:
 ### Inline — Simple Text Email
 
 ```php
-$email = $workflow->addNode('Confirmation Email', 'send_mail', [
-    'send_mode' => 'inline',
-    'to'        => '{{ item.customer_email }}',
-    'subject'   => 'Order #{{ item.id }} confirmed',
-    'body'      => 'Hi {{ item.customer_name }}, your order for ${{ item.total }} has been confirmed.',
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Enums\MailSendMode;
+
+$email = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Confirmation Email')
+        ->sendMode(MailSendMode::Inline)
+        ->to('{{ item.customer_email }}')
+        ->subject('Order #{{ item.id }} confirmed')
+        ->body('Hi {{ item.customer_name }}, your order for ${{ item.total }} has been confirmed.')
+);
 ```
 
 ### Inline — HTML with CC and Attachments
 
 ```php
-$email = $workflow->addNode('Invoice Email', 'send_mail', [
-    'send_mode'   => 'inline',
-    'to'          => '{{ item.customer_email }}',
-    'cc'          => 'billing@example.com',
-    'subject'     => 'Invoice #{{ item.invoice_number }}',
-    'body'        => '<h1>Invoice</h1><p>Amount: ${{ item.total }}</p>',
-    'is_html'     => true,
-    'attachments' => ['invoice.pdf' => '{{ item.invoice_path }}'],
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Enums\MailSendMode;
+
+$email = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Invoice Email')
+        ->sendMode(MailSendMode::Inline)
+        ->to('{{ item.customer_email }}')
+        ->cc('billing@example.com')
+        ->subject('Invoice #{{ item.invoice_number }}')
+        ->body('<h1>Invoice</h1><p>Amount: ${{ item.total }}</p>')
+        ->isHtml()
+        ->attachments(['invoice.pdf' => '{{ item.invoice_path }}'])
+);
 ```
 
 ### Mailable — Custom Template
 
 ```php
-$email = $workflow->addNode('Welcome Email', 'send_mail', [
-    'send_mode'      => 'mailable',
-    'mailable_class' => 'App\\Mail\\WelcomeEmail',
-    'mailable_to'    => '{{ item.email }}',
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Enums\MailSendMode;
+
+$email = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Welcome Email')
+        ->sendMode(MailSendMode::Mailable)
+        ->mailableClass('App\\Mail\\WelcomeEmail')
+        ->mailableTo('{{ item.email }}')
+);
 ```
 
 Your Mailable class receives the workflow item:

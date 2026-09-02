@@ -62,15 +62,18 @@ Input: [{plan: "enterprise"}, {plan: "free"}, {plan: "unknown"}]
 ## Example
 
 ```php
-$router = $workflow->addNode('Route by Plan', 'switch', [
-    'field' => '{{ item.plan }}',
-    'cases' => [
-        ['port' => 'case_enterprise', 'operator' => 'equals', 'value' => 'enterprise'],
-        ['port' => 'case_pro',        'operator' => 'equals', 'value' => 'pro'],
-        ['port' => 'case_free',       'operator' => 'equals', 'value' => 'free'],
-    ],
-    'fallthrough' => true,
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\SwitchNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+
+$router = $workflow->addNode(
+    SwitchNode::make()
+        ->title('Route by Plan')
+        ->field('{{ item.plan }}')
+        ->case('case_enterprise', ConditionOperator::Equals, 'enterprise')
+        ->case('case_pro', ConditionOperator::Equals, 'pro')
+        ->case('case_free', ConditionOperator::Equals, 'free')
+        ->fallthrough()
+);
 
 $router->connect($enterpriseFlow, 'case_enterprise');
 $router->connect($proFlow,        'case_pro');

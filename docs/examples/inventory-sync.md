@@ -48,6 +48,15 @@ Receive product updates from a supplier webhook, loop through each product, and 
 ## Workflow Setup
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendNotificationNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\ErrorHandlerNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\LoopNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WebhookTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ErrorRoute;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+use Aftandilmmd\WorkflowAutomation\Enums\WebhookAuthType;
+
 // app/Console/Commands/SetupInventorySync.php
 
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
@@ -63,64 +72,74 @@ class SetupInventorySync extends Command
         $workflow = Workflow::create(['name' => 'Inventory Sync']);
 
         // 1. Webhook receives product updates from the supplier
-        $trigger = $workflow->addNode('Supplier Webhook', 'webhook', [
-            'method'     => 'POST',
-            'auth_type'  => 'bearer',
-            'auth_value' => config('services.supplier.webhook_secret'),
-        ]);
+        $trigger = $workflow->addNode(
+            WebhookTriggerNode::make()
+                ->title('Supplier Webhook')
+                ->method(HttpMethod::Post)
+                ->authType(WebhookAuthType::Bearer)
+                ->authValue(config('services.supplier.webhook_secret'))
+        );
 
         // 2. Loop through each product in the payload
-        $loop = $workflow->addNode('Each Product', 'loop', [
-            'source_field' => 'products',
-        ]);
+        $loop = $workflow->addNode(
+            LoopNode::make()
+                ->title('Each Product')
+                ->sourceField('products')
+        );
 
         // 3. Update internal stock via API
-        $updateStock = $workflow->addNode('Update Stock', 'http_request', [
-            'url'    => 'https://internal.yourapp.com/api/inventory/update',
-            'method' => 'POST',
-            'body'   => [
-                'sku'      => '{{ item._loop_item.sku }}',
-                'quantity' => '{{ item._loop_item.quantity }}',
-                'price'    => '{{ item._loop_item.unit_price }}',
-            ],
-            'headers' => [
-                'Authorization' => 'Bearer {{ env.INTERNAL_API_TOKEN }}',
-                'Content-Type'  => 'application/json',
-            ],
-            'timeout' => 15,
-        ]);
+        $updateStock = $workflow->addNode(
+            HttpRequestNode::make()
+                ->title('Update Stock')
+                ->url('https://internal.yourapp.com/api/inventory/update')
+                ->method(HttpMethod::Post)
+                ->body([
+                            'sku'      => '{{ item._loop_item.sku }}',
+                            'quantity' => '{{ item._loop_item.quantity }}',
+                            'price'    => '{{ item._loop_item.unit_price }}',
+                        ])
+                ->headers([
+                            'Authorization' => 'Bearer {{ env.INTERNAL_API_TOKEN }}',
+                            'Content-Type'  => 'application/json',
+                        ])
+                ->timeout(15)
+        );
 
         // 4. Error handler routes failures by error pattern
-        $errorHandler = $workflow->addNode('Handle Errors', 'error_handler', [
-            'rules' => [
-                ['match' => 'timeout',       'route' => 'retry'],
-                ['match' => '404|not.found', 'route' => 'ignore'],
-            ],
-            'default_route' => 'notify',
-        ]);
+        $errorHandler = $workflow->addNode(
+            ErrorHandlerNode::make()
+                ->title('Handle Errors')
+                ->rule('timeout', ErrorRoute::Retry)
+                ->rule('404|not.found', ErrorRoute::Ignore)
+                ->defaultRoute(ErrorRoute::Notify)
+        );
 
         // 5a. Notify — send notification for unexpected errors
-        $notifyOps = $workflow->addNode('Notify Ops Team', 'send_notification', [
-            'notification_class' => 'App\\Notifications\\InventoryError',
-            'notifiable_class'   => 'App\\Models\\User',
-            'notifiable_id'      => '{{ env.OPS_TEAM_USER_ID }}',
-        ]);
+        $notifyOps = $workflow->addNode(
+            SendNotificationNode::make()
+                ->title('Notify Ops Team')
+                ->notificationClass('App\\Notifications\\InventoryError')
+                ->notifiableClass('App\\Models\\User')
+                ->notifiableId('{{ env.OPS_TEAM_USER_ID }}')
+        );
 
         // 5b. Retry — re-attempt the stock update
-        $retryStock = $workflow->addNode('Retry Stock Update', 'http_request', [
-            'url'    => 'https://internal.yourapp.com/api/inventory/update',
-            'method' => 'POST',
-            'body'   => [
-                'sku'      => '{{ item._loop_item.sku }}',
-                'quantity' => '{{ item._loop_item.quantity }}',
-                'price'    => '{{ item._loop_item.unit_price }}',
-            ],
-            'headers' => [
-                'Authorization' => 'Bearer {{ env.INTERNAL_API_TOKEN }}',
-                'Content-Type'  => 'application/json',
-            ],
-            'timeout' => 30,
-        ]);
+        $retryStock = $workflow->addNode(
+            HttpRequestNode::make()
+                ->title('Retry Stock Update')
+                ->url('https://internal.yourapp.com/api/inventory/update')
+                ->method(HttpMethod::Post)
+                ->body([
+                            'sku'      => '{{ item._loop_item.sku }}',
+                            'quantity' => '{{ item._loop_item.quantity }}',
+                            'price'    => '{{ item._loop_item.unit_price }}',
+                        ])
+                ->headers([
+                            'Authorization' => 'Bearer {{ env.INTERNAL_API_TOKEN }}',
+                            'Content-Type'  => 'application/json',
+                        ])
+                ->timeout(30)
+        );
 
         // Wire the graph
         $trigger->connect($loop);

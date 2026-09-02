@@ -22,15 +22,18 @@ The error item contains:
 The `error_handler` node routes errors to different ports based on regex pattern matching:
 
 ```php
-$errorHandler = $workflow->addNode('Handle Errors', 'error_handler', [
-    'rules' => [
-        ['match' => 'timeout|timed.out', 'route' => 'retry'],
-        ['match' => '404|not.found',     'route' => 'ignore'],
-        ['match' => '5\\d{2}',           'route' => 'retry'],
-        ['match' => 'validation',        'route' => 'notify'],
-    ],
-    'default_route' => 'stop',
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\ErrorHandlerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ErrorRoute;
+
+$errorHandler = $workflow->addNode(
+    ErrorHandlerNode::make()
+        ->title('Handle Errors')
+        ->rule('timeout|timed.out', ErrorRoute::Retry)
+        ->rule('404|not.found', ErrorRoute::Ignore)
+        ->rule('5\\d{2}', ErrorRoute::Retry)
+        ->rule('validation', ErrorRoute::Notify)
+        ->defaultRoute(ErrorRoute::Stop)
+);
 ```
 
 Output ports: `notify`, `retry`, `ignore`, `stop`.
@@ -52,12 +55,12 @@ $errorHandler->connect($alertEmail, sourcePort: 'notify');
 Add `retry_count` and `retry_delay_ms` to any node's config:
 
 ```php
-$httpNode = $workflow->addNode('Call API', 'http_request', [
-    'url'            => 'https://api.example.com/data',
-    'method'         => 'GET',
-    'retry_count'    => 3,
-    'retry_delay_ms' => 2000,
-]);
+$httpNode = $workflow->addNode(
+    HttpRequestNode::get('https://api.example.com/data')
+        ->title('Call API')
+        ->set('retry_count', 3)
+        ->set('retry_delay_ms', 2000)
+);
 ```
 
 ### Global Defaults

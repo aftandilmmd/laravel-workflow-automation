@@ -51,15 +51,19 @@ For each input item:
 ## Example
 
 ```php
-$update = $workflow->addNode('Update Order Status', 'update_model', [
-    'model'      => 'App\\Models\\Order',
-    'find_by'    => 'id',
-    'find_value' => '{{ item.order_id }}',
-    'fields'     => [
-        'status'     => 'shipped',
-        'shipped_at' => '{{ now() }}',
-    ],
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\UpdateModelNode;
+
+$update = $workflow->addNode(
+    UpdateModelNode::make()
+        ->title('Update Order Status')
+        ->model('App\\Models\\Order')
+        ->findBy('id')
+        ->findValue('{{ item.order_id }}')
+        ->fields([
+            'status'     => 'shipped',
+            'shipped_at' => '{{ now() }}',
+        ])
+);
 ```
 
 ## Input / Output Example

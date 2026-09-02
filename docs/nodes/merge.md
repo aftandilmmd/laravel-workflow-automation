@@ -48,7 +48,14 @@ Unconnected ports are ignored and do not block execution.
 ## Example
 
 ```php
-$merge = $workflow->addNode('Combine', 'merge', ['mode' => 'append']);
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\MergeNode;
+use Aftandilmmd\WorkflowAutomation\Enums\MergeMode;
+
+$merge = $workflow->addNode(
+    MergeNode::make()
+        ->title('Combine')
+        ->mode(MergeMode::Append)
+);
 
 $apiUsers->connect($merge, 'main', 'main_1');
 $apiOrders->connect($merge, 'main', 'main_2');
