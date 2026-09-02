@@ -77,6 +77,7 @@ class WorkflowAutomationServiceProvider extends ServiceProvider
                 Console\Commands\ScheduleRunCommand::class,
                 Console\Commands\CleanRunsCommand::class,
                 Console\Commands\ValidateWorkflowCommand::class,
+                Console\Commands\MakeNodeBuilderCommand::class,
             ]);
 
             $this->publishes([
