@@ -12,10 +12,12 @@ Otomasyon akışlarını canvas üzerine node'ları sürükleyerek kurun — ya 
 
 **[English](README.md)** | Türkçe
 
+**[Dokümantasyon](https://laravel-workflow.pilyus.com)**
+
 </div>
 
 > [!NOTE]
-> 1.0 öncesi. Paket test edilmiş durumda ve bugün kullanılabilir, ancak API minor sürümler arasında değişebilir. Sürüm kısıtını sabitleyin (`^0.2`) ve yükseltmeden önce [changelog](CHANGELOG.md)'a bakın.
+> 1.0 öncesi. Paket test edilmiş durumda ve bugün kullanılabilir, ancak API minor sürümler arasında değişebilir. Sürüm kısıtını sabitleyin (`^0.3`) ve yükseltmeden önce [changelog](CHANGELOG.md)'a bakın.
 
 ![Workflow Editor](docs/screenshots/workflow-editor.png)
 
