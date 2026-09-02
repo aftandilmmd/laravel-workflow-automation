@@ -4,6 +4,7 @@ namespace Aftandilmmd\WorkflowAutomation\Builders\Conditions;
 
 use Aftandilmmd\WorkflowAutomation\Builders\NodeDefinition;
 use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+use Aftandilmmd\WorkflowAutomation\Enums\Operator;
 
 /**
  * Routes items to the 'true' or 'false' port.
@@ -15,7 +16,7 @@ class IfConditionNode extends NodeDefinition
         return 'if_condition';
     }
 
-    public static function when(string $field, ConditionOperator|string $operator, mixed $value = null): static
+    public static function when(string $field, ConditionOperator|Operator|string $operator, mixed $value = null): static
     {
         return static::make()->field($field)->operator($operator)->value($value);
     }
@@ -25,7 +26,10 @@ class IfConditionNode extends NodeDefinition
         return $this->set('field', $field);
     }
 
-    public function operator(ConditionOperator|string $operator): static
+    /**
+     * @param  ConditionOperator|Operator|string  $operator  Operator is deprecated; prefer ConditionOperator.
+     */
+    public function operator(ConditionOperator|Operator|string $operator): static
     {
         return $this->set('operator', $operator);
     }

@@ -5,6 +5,7 @@ namespace Aftandilmmd\WorkflowAutomation\Builders\Utilities;
 use Aftandilmmd\WorkflowAutomation\Builders\NodeDefinition;
 use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
 use Aftandilmmd\WorkflowAutomation\Enums\FilterLogic;
+use Aftandilmmd\WorkflowAutomation\Enums\Operator;
 
 class FilterNode extends NodeDefinition
 {
@@ -21,7 +22,7 @@ class FilterNode extends NodeDefinition
         return $this->set('conditions', $conditions);
     }
 
-    public function condition(string $field, ConditionOperator|string $operator, mixed $value = null): static
+    public function condition(string $field, ConditionOperator|Operator|string $operator, mixed $value = null): static
     {
         return $this->push('conditions', ['field' => $field, 'operator' => $operator, 'value' => $value]);
     }
