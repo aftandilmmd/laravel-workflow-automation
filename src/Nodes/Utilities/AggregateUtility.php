@@ -3,13 +3,14 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Utilities;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\AggregateNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\NodeInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\AggregateFunction;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 
-#[AsWorkflowNode(key: 'aggregate', type: NodeType::Utility, label: 'Aggregate')]
+#[AsWorkflowNode(key: 'aggregate', type: NodeType::Utility, label: 'Aggregate', builder: AggregateNode::class)]
 class AggregateUtility implements NodeInterface
 {
     use \Aftandilmmd\WorkflowAutomation\Nodes\HasDocumentation;

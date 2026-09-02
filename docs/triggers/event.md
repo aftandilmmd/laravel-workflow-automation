@@ -6,6 +6,18 @@ The `event` trigger fires automatically when a Laravel event is dispatched. Unli
 
 **Node key:** `event`
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\EventTriggerNode;
+
+EventTriggerNode::make()
+    ->title('Order Placed')
+    ->eventClass(OrderPlaced::class);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |
@@ -61,17 +73,24 @@ class OrderPlaced
 Then define the workflow:
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\EventTriggerNode;
+
 $workflow = Workflow::create(['name' => 'Order Notification']);
 
-$trigger = $workflow->addNode('Order Placed', 'event', [
-    'event_class' => 'App\\Events\\OrderPlaced',
-]);
+$trigger = $workflow->addNode(
+    EventTriggerNode::make()
+        ->title('Order Placed')
+        ->eventClass('App\\Events\\OrderPlaced')
+);
 
-$email = $workflow->addNode('Notify Team', 'send_mail', [
-    'to'      => 'orders@company.com',
-    'subject' => 'New Order: ${{ item.order.total }}',
-    'body'    => 'Customer {{ item.customer.name }} placed an order.',
-]);
+$email = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Notify Team')
+        ->to('orders@company.com')
+        ->subject('New Order: ${{ item.order.total }}')
+        ->body('Customer {{ item.customer.name }} placed an order.')
+);
 
 $trigger->connect($email);
 $workflow->activate();
@@ -103,17 +122,24 @@ class PaymentFailed
 ```
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\EventTriggerNode;
+
 $workflow = Workflow::create(['name' => 'Payment Failure Handler']);
 
-$trigger = $workflow->addNode('Payment Failed', 'event', [
-    'event_class' => 'App\\Events\\PaymentFailed',
-]);
+$trigger = $workflow->addNode(
+    EventTriggerNode::make()
+        ->title('Payment Failed')
+        ->eventClass('App\\Events\\PaymentFailed')
+);
 
-$notifyCustomer = $workflow->addNode('Notify Customer', 'send_mail', [
-    'to'      => '{{ item.customerEmail }}',
-    'subject' => 'Payment issue with order #{{ item.orderId }}',
-    'body'    => 'Your payment could not be processed: {{ item.reason }}',
-]);
+$notifyCustomer = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Notify Customer')
+        ->to('{{ item.customerEmail }}')
+        ->subject('Payment issue with order #{{ item.orderId }}')
+        ->body('Your payment could not be processed: {{ item.reason }}')
+);
 
 $trigger->connect($notifyCustomer);
 $workflow->activate();

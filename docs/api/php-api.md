@@ -28,20 +28,35 @@ $workflow = Workflow::create([
 ### Adding Nodes
 
 ```php
-$node = $workflow->addNode(string $name, string $nodeKey, array $config = []): WorkflowNode
+$node = $workflow->addNode(NodeDefinition $definition): WorkflowNode
+$nodes = $workflow->addNodes(NodeDefinition ...$definitions): array
 ```
 
-Returns the created `WorkflowNode` instance.
+Returns the created `WorkflowNode` instance. Node definitions are fluent builder classes —
+see [Node Builders](./node-builders.md) for the full list.
 
 ```php
-$trigger = $workflow->addNode('Start', 'manual');
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
 
-$email = $workflow->addNode('Send Email', 'send_mail', [
-    'to'      => '{{ item.email }}',
-    'subject' => 'Hello {{ item.name }}',
-    'body'    => 'Welcome!',
-]);
+$trigger = $workflow->addNode(
+    ManualTriggerNode::make()
+        ->title('Start')
+);
+
+$email = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Send Email')
+        ->to('{{ item.email }}')
+        ->subject('Hello {{ item.name }}')
+        ->body('Welcome!')
+);
 ```
+
+The builder is validated against the node's config schema before the node is saved, so a
+missing required field or a mistyped key fails immediately.
+
+A node key and config array are also accepted — see [Array API](./array-api.md).
 
 ### Connecting Nodes
 
@@ -173,7 +188,7 @@ Workflow::validate(int|Workflow $workflow): array
 ### Builder
 
 ```php
-Workflow::addNode(int|Workflow $workflow, string $nodeKey, array $config = [], ?string $name = null): WorkflowNode
+Workflow::addNode(int|Workflow $workflow, string|NodeDefinition $nodeKey, array $config = [], ?string $name = null): WorkflowNode
 Workflow::connect(int|WorkflowNode $source, int|WorkflowNode $target, string $sourcePort = 'main', string $targetPort = 'main'): WorkflowEdge
 Workflow::removeNode(int $nodeId): void
 Workflow::removeEdge(int $edgeId): void

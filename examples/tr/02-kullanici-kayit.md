@@ -18,6 +18,14 @@ Yeni kullanıcı kayıt olduğunda, nasıl kaydolduğuna göre (organik, referan
 Bir artisan komutu oluşturup `php artisan workflow:setup-onboarding` ile bir kez çalıştırın.
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\SwitchNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ModelEventTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+use Aftandilmmd\WorkflowAutomation\Enums\ModelEvent;
+
 // app/Console/Commands/SetupOnboardingWorkflow.php
 
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
@@ -32,45 +40,55 @@ class SetupOnboardingWorkflow extends Command
     {
         $workflow = Workflow::create(['name' => 'User Onboarding']);
 
-        $trigger = $workflow->addNode('User Created', 'model_event', [
-            'model'  => 'App\\Models\\User',
-            'events' => ['created'],
-        ]);
+        $trigger = $workflow->addNode(
+            ModelEventTriggerNode::make()
+                ->title('User Created')
+                ->model('App\\Models\\User')
+                ->events([ModelEvent::Created])
+        );
 
-        $switchSource = $workflow->addNode('Check Source', 'switch', [
-            'field' => 'source',
-            'cases' => [
-                ['port' => 'case_organic',  'operator' => 'equals', 'value' => 'organic'],
-                ['port' => 'case_referral', 'operator' => 'equals', 'value' => 'referral'],
-            ],
-        ]);
+        $switchSource = $workflow->addNode(
+            SwitchNode::make()
+                ->title('Check Source')
+                ->field('source')
+                ->case('case_organic', ConditionOperator::Equals, 'organic')
+                ->case('case_referral', ConditionOperator::Equals, 'referral')
+        );
 
-        $welcomeOrganic = $workflow->addNode('Welcome (Organic)', 'send_mail', [
-            'to'      => '{{ item.email }}',
-            'subject' => 'Welcome, {{ item.name }}!',
-            'body'    => 'Thanks for signing up. Start your 14-day trial today.',
-        ]);
+        $welcomeOrganic = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Welcome (Organic)')
+                ->to('{{ item.email }}')
+                ->subject('Welcome, {{ item.name }}!')
+                ->body('Thanks for signing up. Start your 14-day trial today.')
+        );
 
-        $welcomeReferral = $workflow->addNode('Welcome (Referral)', 'send_mail', [
-            'to'      => '{{ item.email }}',
-            'subject' => 'Your friend invited you! Welcome, {{ item.name }}',
-            'body'    => 'You were referred by a friend — both of you get bonus credits.',
-        ]);
+        $welcomeReferral = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Welcome (Referral)')
+                ->to('{{ item.email }}')
+                ->subject('Your friend invited you! Welcome, {{ item.name }}')
+                ->body('You were referred by a friend — both of you get bonus credits.')
+        );
 
-        $creditReferrer = $workflow->addNode('Credit Referrer', 'http_request', [
-            'url'    => 'https://api.yourapp.com/referrals/credit',
-            'method' => 'POST',
-            'body'   => [
-                'referrer_code' => '{{ item.referral_code }}',
-                'new_user_id'   => '{{ item.id }}',
-            ],
-        ]);
+        $creditReferrer = $workflow->addNode(
+            HttpRequestNode::make()
+                ->title('Credit Referrer')
+                ->url('https://api.yourapp.com/referrals/credit')
+                ->method(HttpMethod::Post)
+                ->body([
+                            'referrer_code' => '{{ item.referral_code }}',
+                            'new_user_id'   => '{{ item.id }}',
+                        ])
+        );
 
-        $welcomeGeneric = $workflow->addNode('Welcome (Generic)', 'send_mail', [
-            'to'      => '{{ item.email }}',
-            'subject' => 'Welcome, {{ item.name }}!',
-            'body'    => 'We are glad to have you.',
-        ]);
+        $welcomeGeneric = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Welcome (Generic)')
+                ->to('{{ item.email }}')
+                ->subject('Welcome, {{ item.name }}!')
+                ->body('We are glad to have you.')
+        );
 
         // Edge'ler
         $trigger->connect($switchSource);

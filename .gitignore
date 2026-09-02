@@ -34,3 +34,6 @@ ui/node_modules/
 storage/
 bootstrap/cache/
 CLAUDE.md
+.claude
+.harness-mem
+plans

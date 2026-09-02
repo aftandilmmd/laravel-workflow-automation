@@ -3,19 +3,21 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Transformers;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\ParseDataNode;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
+use Aftandilmmd\WorkflowAutomation\Enums\ParseFormat;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 
-#[AsWorkflowNode(key: 'parse_data', type: NodeType::Transformer, label: 'Parse Data')]
+#[AsWorkflowNode(key: 'parse_data', type: NodeType::Transformer, label: 'Parse Data', builder: ParseDataNode::class)]
 class ParseDataTransformer extends BaseNode
 {
     public static function configSchema(): array
     {
         return [
             ['key' => 'source_field', 'type' => 'string', 'label' => 'Source field', 'required' => true, 'supports_expression' => true],
-            ['key' => 'format', 'type' => 'select', 'label' => 'Format', 'required' => true, 'options' => ['json', 'csv', 'key_value']],
+            ['key' => 'format', 'type' => 'select', 'label' => 'Format', 'required' => true, 'options' => array_column(ParseFormat::cases(), 'value')],
             ['key' => 'target_field', 'type' => 'string', 'label' => 'Target field', 'required' => true],
         ];
     }

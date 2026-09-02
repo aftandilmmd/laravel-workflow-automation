@@ -6,6 +6,21 @@ Finds an Eloquent model by a field and updates it with new values.
 
 **Node key:** `update_model` · **Type:** Action
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\UpdateModelNode;
+
+UpdateModelNode::make()
+    ->title('Mark Order Paid')
+    ->model(Order::class)
+    ->findBy('id')
+    ->findValue('{{ item.order_id }}')
+    ->fields(['status' => 'paid']);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |
@@ -36,15 +51,19 @@ For each input item:
 ## Example
 
 ```php
-$update = $workflow->addNode('Update Order Status', 'update_model', [
-    'model'      => 'App\\Models\\Order',
-    'find_by'    => 'id',
-    'find_value' => '{{ item.order_id }}',
-    'fields'     => [
-        'status'     => 'shipped',
-        'shipped_at' => '{{ now() }}',
-    ],
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\UpdateModelNode;
+
+$update = $workflow->addNode(
+    UpdateModelNode::make()
+        ->title('Update Order Status')
+        ->model('App\\Models\\Order')
+        ->findBy('id')
+        ->findValue('{{ item.order_id }}')
+        ->fields([
+            'status'     => 'shipped',
+            'shipped_at' => '{{ now() }}',
+        ])
+);
 ```
 
 ## Input / Output Example

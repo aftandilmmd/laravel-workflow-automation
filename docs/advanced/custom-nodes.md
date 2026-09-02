@@ -69,9 +69,10 @@ class SlackMessageNode extends BaseNode
 
 ```php
 #[AsWorkflowNode(
-    key: 'slack_message',       // Unique identifier used in addNode()
-    type: NodeType::Action,     // Category for UI grouping
-    label: 'Slack Message',     // Human-readable label
+    key: 'slack_message',            // Unique identifier used in addNode()
+    type: NodeType::Action,          // Category for UI grouping
+    label: 'Slack Message',          // Human-readable label
+    builder: SlackMessageNode::class, // Optional fluent builder
 )]
 ```
 
@@ -80,6 +81,7 @@ class SlackMessageNode extends BaseNode
 | `key` | string | Unique key for this node type |
 | `type` | NodeType | `Trigger`, `Action`, `Condition`, `Transformer`, `Control`, `Utility`, or `Code` |
 | `label` | string | Display name |
+| `builder` | class-string\|null | Builder class for this node — see [Node Builders](#node-builders) |
 
 ## NodeInterface
 
@@ -347,18 +349,108 @@ class MyTrigger implements TriggerInterface
 ## Using Your Custom Node
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\GenericNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
+
 $workflow = Workflow::create(['name' => 'Alert Pipeline']);
 
-$trigger = $workflow->addNode('New Alert', 'manual');
-$slack   = $workflow->addNode('Notify Team', 'slack_message', [
-    'channel'     => '#alerts',
-    'message'     => 'Alert: {{ item.message }}',
-    'webhook_url' => 'https://hooks.slack.com/services/...',
-]);
+$trigger = $workflow->addNode(
+    ManualTriggerNode::make()
+        ->title('New Alert')
+);
+$slack   = $workflow->addNode(
+    GenericNode::make('slack_message')
+        ->title('Notify Team')
+        ->set('channel', '#alerts')
+        ->set('message', 'Alert: {{ item.message }}')
+        ->set('webhook_url', 'https://hooks.slack.com/services/...')
+);
 
 $trigger->connect($slack);
 $workflow->activate();
 ```
+
+## Node Builders
+
+`GenericNode` works for any node, but a dedicated builder gives your users autocomplete and
+validation. Generate one from your config schema:
+
+```bash
+php artisan workflow:make-node-builder slack_message
+```
+
+Or write it by hand:
+
+```php
+namespace Acme\Slack\Builders;
+
+use Aftandilmmd\WorkflowAutomation\Builders\NodeDefinition;
+
+class SlackMessageNode extends NodeDefinition
+{
+    public function nodeKey(): string
+    {
+        return 'slack_message';
+    }
+
+    public function channel(string $channel): static
+    {
+        return $this->set('channel', $channel);
+    }
+
+    /**
+     * Supports expressions, e.g. {{ item.message }}.
+     */
+    public function message(string $message): static
+    {
+        return $this->set('message', $message);
+    }
+
+    public function webhookUrl(string $url): static
+    {
+        return $this->set('webhook_url', $url);
+    }
+}
+```
+
+Point the node at it so the registry, the REST API and the MCP server can advertise it:
+
+```php
+#[AsWorkflowNode(
+    key: 'slack_message',
+    type: NodeType::Action,
+    label: 'Slack Message',
+    builder: SlackMessageNode::class,
+)]
+class SlackMessageAction extends BaseNode { /* ... */ }
+```
+
+```php
+$slack = $workflow->addNode(
+    SlackMessageNode::make()
+        ->title('Notify Team')
+        ->channel('#alerts')
+        ->message('Alert: {{ item.message }}')
+        ->webhookUrl('https://hooks.slack.com/services/...')
+);
+```
+
+### Conventions
+
+Follow the same rules as the built-in builders so your node feels native:
+
+- **Class name** — node key in PascalCase plus `Node`; triggers end in `TriggerNode`.
+  Name the node class itself after its type (`SlackMessageAction`) to avoid a clash.
+- **Method name** — the config key in camelCase, one method per key, no exceptions.
+- **Booleans** default to `true`: `public function notifyOwner(bool $value = true): static`.
+- **Fixed values** get a backed enum, and the setter accepts `YourEnum|string`. Feed the
+  same enum into `configSchema()` with `array_column(YourEnum::cases(), 'value')` so the
+  schema and the enum cannot drift apart.
+- **List fields** get a plural setter that replaces and a singular one that appends via the
+  protected `push()` helper; key/value fields use `putEntry()`.
+- **`*_id` fields** accept an ID or a model.
+
+See [Node Builders](/api/node-builders) for the full reference.
 
 ## Node Documentation
 

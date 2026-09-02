@@ -4,6 +4,21 @@ Dispatches a Laravel queued job for each item.
 
 **Node key:** `dispatch_job` · **Type:** Action
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\DispatchJobNode;
+
+DispatchJobNode::make()
+    ->title('Generate Invoice')
+    ->jobClass(GenerateInvoice::class)
+    ->queue('invoices')
+    ->delay(30)
+    ->withItem();
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |
@@ -33,12 +48,16 @@ For each input item:
 ## Example
 
 ```php
-$dispatch = $workflow->addNode('Generate Invoice', 'dispatch_job', [
-    'job_class' => 'App\\Jobs\\GenerateInvoicePdf',
-    'queue'     => 'pdfs',
-    'delay'     => 5,
-    'with_item' => true,
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\DispatchJobNode;
+
+$dispatch = $workflow->addNode(
+    DispatchJobNode::make()
+        ->title('Generate Invoice')
+        ->jobClass('App\\Jobs\\GenerateInvoicePdf')
+        ->queue('pdfs')
+        ->delay(5)
+        ->withItem()
+);
 ```
 
 Your job class when `with_item` is enabled:

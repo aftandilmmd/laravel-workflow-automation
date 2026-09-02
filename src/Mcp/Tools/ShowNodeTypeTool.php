@@ -47,6 +47,7 @@ class ShowNodeTypeTool extends Tool
             'input_ports' => $node->inputPorts(),
             'output_ports' => $node->outputPorts(),
             'config_schema' => $node::configSchema(),
+            'builder_class' => $this->registry->builderFor($key),
         ]);
     }
 }

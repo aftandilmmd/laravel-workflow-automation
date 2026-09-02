@@ -2,6 +2,7 @@
 
 namespace Aftandilmmd\WorkflowAutomation\Models;
 
+use Aftandilmmd\WorkflowAutomation\Builders\NodeDefinition;
 use Aftandilmmd\WorkflowAutomation\Database\Factories\WorkflowNodeFactory;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Services\WorkflowService;
@@ -90,8 +91,19 @@ class WorkflowNode extends Model
 
     // ── Fluent API ──────────────────────────────────────────────
 
-    public function addNode(string $name, string $nodeKey, array $config = []): self
+    /**
+     * Add another node to the same workflow.
+     */
+    public function addNode(string|NodeDefinition $name, ?string $nodeKey = null, array $config = []): self
     {
+        if ($name instanceof NodeDefinition) {
+            return $this->service()->addNode($this->workflow_id, $name);
+        }
+
+        if ($nodeKey === null) {
+            throw new \InvalidArgumentException('A node key is required when adding a node by name.');
+        }
+
         return $this->service()->addNode($this->workflow_id, $nodeKey, $config, $name);
     }
 

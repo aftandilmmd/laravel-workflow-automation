@@ -3,12 +3,13 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Actions;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\DispatchJobNode;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 
-#[AsWorkflowNode(key: 'dispatch_job', type: NodeType::Action, label: 'Dispatch Job')]
+#[AsWorkflowNode(key: 'dispatch_job', type: NodeType::Action, label: 'Dispatch Job', builder: DispatchJobNode::class)]
 class DispatchJobAction extends BaseNode
 {
     public static function configSchema(): array

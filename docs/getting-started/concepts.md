@@ -130,11 +130,15 @@ Input Ports          Node           Output Ports
 The `{{ expression }}` syntax lets you reference dynamic data in node configs:
 
 ```php
-$workflow->addNode('Greet', 'send_mail', [
-    'to'      => '{{ item.email }}',
-    'subject' => 'Order #{{ item.order_id }} confirmed',
-    'body'    => '{{ item.quantity > 10 ? "Bulk" : "Standard" }} order',
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+
+$workflow->addNode(
+    SendMailNode::make()
+        ->title('Greet')
+        ->to('{{ item.email }}')
+        ->subject('Order #{{ item.order_id }} confirmed')
+        ->body('{{ item.quantity > 10 ? "Bulk" : "Standard" }} order')
+);
 ```
 
 Available variables:
@@ -205,8 +209,16 @@ Configure globally in `config/workflow-automation.php`:
 ::: code-group
 ```php [Fluent API]
 $workflow = Workflow::create(['name' => 'My Flow']);
-$trigger = $workflow->addNode('Start', 'manual');
-$email = $workflow->addNode('Send', 'send_mail', [...]);
+$trigger = $workflow->addNode(
+    ManualTriggerNode::make()
+        ->title('Start')
+);
+
+$email = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Send')
+    // ...
+);
 $trigger->connect($email);
 $workflow->activate();
 $workflow->start($payload);

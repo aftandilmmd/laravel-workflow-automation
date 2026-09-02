@@ -6,6 +6,18 @@ Expands an array field within each item into individual items for per-element pr
 
 **Node key:** `loop` · **Type:** Control
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\LoopNode;
+
+LoopNode::make()
+    ->title('Each Order Line')
+    ->sourceField('{{ item.lines }}');
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |
@@ -46,18 +58,30 @@ loop_done port:
 ## Example
 
 ```php
-$loop = $workflow->addNode('Each Line Item', 'loop', [
-    'source_field' => 'line_items',
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\UpdateModelNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\LoopNode;
 
-$updateStock = $workflow->addNode('Update Stock', 'update_model', [
-    'model'      => 'App\\Models\\Product',
-    'find_by'    => 'id',
-    'find_value' => '{{ item._loop_item.product_id }}',
-    'fields'     => ['stock' => '{{ item._loop_item.new_stock }}'],
-]);
+$loop = $workflow->addNode(
+    LoopNode::make()
+        ->title('Each Line Item')
+        ->sourceField('line_items')
+);
 
-$summary = $workflow->addNode('Send Summary', 'send_mail', [...]);
+$updateStock = $workflow->addNode(
+    UpdateModelNode::make()
+        ->title('Update Stock')
+        ->model('App\\Models\\Product')
+        ->findBy('id')
+        ->findValue('{{ item._loop_item.product_id }}')
+        ->fields(['stock' => '{{ item._loop_item.new_stock }}'])
+);
+
+$summary = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Send Summary')
+    // ...
+);
 
 $loop->connect($updateStock, 'loop_item');
 $loop->connect($summary, 'loop_done');

@@ -3,13 +3,15 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Utilities;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\CodeNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\ExpressionEvaluatorInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
+use Aftandilmmd\WorkflowAutomation\Enums\CodeMode;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 
-#[AsWorkflowNode(key: 'code', type: NodeType::Code, label: 'Code / Expression')]
+#[AsWorkflowNode(key: 'code', type: NodeType::Code, label: 'Code / Expression', builder: CodeNode::class)]
 class CodeUtility extends BaseNode
 {
     public function __construct(
@@ -19,7 +21,7 @@ class CodeUtility extends BaseNode
     public static function configSchema(): array
     {
         return [
-            ['key' => 'mode', 'type' => 'select', 'label' => 'Mode', 'options' => ['transform', 'filter'], 'required' => true],
+            ['key' => 'mode', 'type' => 'select', 'label' => 'Mode', 'options' => array_column(CodeMode::cases(), 'value'), 'required' => true],
             ['key' => 'expression', 'type' => 'textarea', 'label' => 'Expression', 'required' => true, 'supports_expression' => true],
         ];
     }

@@ -3,13 +3,15 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Utilities;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\FilterNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\NodeInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
-use Aftandilmmd\WorkflowAutomation\Enums\Operator;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+use Aftandilmmd\WorkflowAutomation\Enums\FilterLogic;
 
-#[AsWorkflowNode(key: 'filter', type: NodeType::Utility, label: 'Filter')]
+#[AsWorkflowNode(key: 'filter', type: NodeType::Utility, label: 'Filter', builder: FilterNode::class)]
 class FilterUtility implements NodeInterface
 {
     use \Aftandilmmd\WorkflowAutomation\Nodes\HasDocumentation;
@@ -29,10 +31,10 @@ class FilterUtility implements NodeInterface
         return [
             ['key' => 'conditions', 'type' => 'array_of_objects', 'label' => 'Conditions', 'required' => true, 'schema' => [
                 ['key' => 'field', 'type' => 'string', 'label' => 'Field'],
-                ['key' => 'operator', 'type' => 'select', 'label' => 'Operator', 'options' => array_column(Operator::cases(), 'value')],
+                ['key' => 'operator', 'type' => 'select', 'label' => 'Operator', 'options' => array_column(ConditionOperator::cases(), 'value')],
                 ['key' => 'value', 'type' => 'string', 'label' => 'Value'],
             ]],
-            ['key' => 'logic', 'type' => 'select', 'label' => 'Logic', 'options' => ['and', 'or'], 'required' => false],
+            ['key' => 'logic', 'type' => 'select', 'label' => 'Logic', 'options' => array_column(FilterLogic::cases(), 'value'), 'required' => false],
         ];
     }
 
@@ -48,7 +50,7 @@ class FilterUtility implements NodeInterface
 
         $filtered = array_filter($input->items, function (array $item) use ($conditions, $logic) {
             $results = array_map(
-                fn (array $cond) => Operator::from($cond['operator'])->evaluate(
+                fn (array $cond) => ConditionOperator::from($cond['operator'])->evaluate(
                     data_get($item, $cond['field']),
                     $cond['value'] ?? null,
                 ),

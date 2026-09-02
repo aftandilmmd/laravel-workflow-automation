@@ -41,6 +41,14 @@ Each signup source gets exactly one branch -- items are never duplicated across 
 ## Complete Workflow Setup
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\SwitchNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ModelEventTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+use Aftandilmmd\WorkflowAutomation\Enums\ModelEvent;
+
 // app/Console/Commands/SetupOnboardingWorkflow.php
 
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
@@ -56,55 +64,65 @@ class SetupOnboardingWorkflow extends Command
         $workflow = Workflow::create(['name' => 'User Onboarding']);
 
         // 1. Trigger when a new User model is created
-        $trigger = $workflow->addNode('User Created', 'model_event', [
-            'model'  => 'App\\Models\\User',
-            'events' => ['created'],
-        ]);
+        $trigger = $workflow->addNode(
+            ModelEventTriggerNode::make()
+                ->title('User Created')
+                ->model('App\\Models\\User')
+                ->events([ModelEvent::Created])
+        );
 
         // 2. Route based on the signup source field
-        $router = $workflow->addNode('Route by Source', 'switch', [
-            'field' => '{{ item.source }}',
-            'cases' => [
-                ['port' => 'case_organic',  'operator' => 'equals', 'value' => 'organic'],
-                ['port' => 'case_referral', 'operator' => 'equals', 'value' => 'referral'],
-            ],
-            'fallthrough' => true,
-        ]);
+        $router = $workflow->addNode(
+            SwitchNode::make()
+                ->title('Route by Source')
+                ->field('{{ item.source }}')
+                ->case('case_organic', ConditionOperator::Equals, 'organic')
+                ->case('case_referral', ConditionOperator::Equals, 'referral')
+                ->fallthrough()
+        );
 
         // 3a. Organic users -- product tour email
-        $organicEmail = $workflow->addNode('Organic Welcome', 'send_mail', [
-            'to'      => '{{ item.email }}',
-            'subject' => 'Welcome, {{ item.name }}! Here is your product tour',
-            'body'    => 'Hi {{ item.name }}, thanks for finding us! Here are 3 things to try first...',
-        ]);
+        $organicEmail = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Organic Welcome')
+                ->to('{{ item.email }}')
+                ->subject('Welcome, {{ item.name }}! Here is your product tour')
+                ->body('Hi {{ item.name }}, thanks for finding us! Here are 3 things to try first...')
+        );
 
         // 3b. Referral users -- referral-specific welcome email
-        $referralEmail = $workflow->addNode('Referral Welcome', 'send_mail', [
-            'to'      => '{{ item.email }}',
-            'subject' => 'Welcome, {{ item.name }}! Your friend sent you here',
-            'body'    => 'Hi {{ item.name }}, welcome aboard! Your referrer {{ item.referred_by }} will receive a credit shortly.',
-        ]);
+        $referralEmail = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Referral Welcome')
+                ->to('{{ item.email }}')
+                ->subject('Welcome, {{ item.name }}! Your friend sent you here')
+                ->body('Hi {{ item.name }}, welcome aboard! Your referrer {{ item.referred_by }} will receive a credit shortly.')
+        );
 
         // 3b-cont. Credit the referrer via external API
-        $creditReferrer = $workflow->addNode('Credit Referrer', 'http_request', [
-            'url'    => 'https://api.example.com/referrals/credit',
-            'method' => 'POST',
-            'body'   => [
-                'referrer_code' => '{{ item.referred_by }}',
-                'new_user_id'   => '{{ item.id }}',
-            ],
-            'headers' => [
-                'Authorization' => 'Bearer {{ env.REFERRAL_API_TOKEN }}',
-            ],
-            'timeout' => 10,
-        ]);
+        $creditReferrer = $workflow->addNode(
+            HttpRequestNode::make()
+                ->title('Credit Referrer')
+                ->url('https://api.example.com/referrals/credit')
+                ->method(HttpMethod::Post)
+                ->body([
+                            'referrer_code' => '{{ item.referred_by }}',
+                            'new_user_id'   => '{{ item.id }}',
+                        ])
+                ->headers([
+                            'Authorization' => 'Bearer {{ env.REFERRAL_API_TOKEN }}',
+                        ])
+                ->timeout(10)
+        );
 
         // 3c. Default -- generic welcome for unknown sources
-        $genericEmail = $workflow->addNode('Generic Welcome', 'send_mail', [
-            'to'      => '{{ item.email }}',
-            'subject' => 'Welcome to our platform, {{ item.name }}!',
-            'body'    => 'Hi {{ item.name }}, thanks for signing up. Let us know if you need help getting started.',
-        ]);
+        $genericEmail = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Generic Welcome')
+                ->to('{{ item.email }}')
+                ->subject('Welcome to our platform, {{ item.name }}!')
+                ->body('Hi {{ item.name }}, thanks for signing up. Let us know if you need help getting started.')
+        );
 
         // Wire the graph
         $trigger->connect($router);

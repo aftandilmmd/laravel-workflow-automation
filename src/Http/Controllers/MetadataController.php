@@ -2,6 +2,7 @@
 
 namespace Aftandilmmd\WorkflowAutomation\Http\Controllers;
 
+use Aftandilmmd\WorkflowAutomation\Enums\ModelEvent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\File;
@@ -37,7 +38,7 @@ class MetadataController extends Controller
     public function modelEvents(): JsonResponse
     {
         return response()->json([
-            'data' => ['created', 'updated', 'deleted', 'restored', 'saving', 'saved', 'creating', 'deleting', 'forceDeleted'],
+            'data' => array_column(ModelEvent::cases(), 'value'),
         ]);
     }
 

@@ -3,12 +3,14 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Actions;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\AiNode;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
+use Aftandilmmd\WorkflowAutomation\Enums\AiProvider;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 
-#[AsWorkflowNode(key: 'ai', type: NodeType::Action, label: 'AI')]
+#[AsWorkflowNode(key: 'ai', type: NodeType::Action, label: 'AI', builder: AiNode::class)]
 class AiAction extends BaseNode
 {
     public static function configSchema(): array
@@ -16,9 +18,7 @@ class AiAction extends BaseNode
         return [
             ['key' => 'prompt',          'type' => 'textarea', 'label' => 'Prompt',              'required' => true,  'supports_expression' => true],
             ['key' => 'system_prompt',   'type' => 'textarea', 'label' => 'System Prompt',       'required' => false, 'supports_expression' => true],
-            ['key' => 'provider',        'type' => 'select',   'label' => 'Provider',            'required' => false, 'options' => [
-                'openai', 'anthropic', 'gemini', 'groq', 'mistral', 'deepseek', 'ollama', 'xai', 'cohere',
-            ]],
+            ['key' => 'provider',        'type' => 'select',   'label' => 'Provider',            'required' => false, 'options' => array_column(AiProvider::cases(), 'value')],
             ['key' => 'model', 'type' => 'select', 'label' => 'Model', 'required' => false, 'depends_on' => 'provider', 'options_map' => [
                 'openai'    => ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4o', 'gpt-4o-mini', 'o3', 'o3-mini', 'o4-mini'],
                 'anthropic' => ['claude-sonnet-4-5-20250514', 'claude-haiku-4-5-20251001', 'claude-opus-4-20250514', 'claude-sonnet-4-20250514'],

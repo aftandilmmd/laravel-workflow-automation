@@ -56,6 +56,14 @@ Handle Stripe webhook events with a single workflow. Incoming events are routed 
 ## Workflow Setup
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\UpdateModelNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\SwitchNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WebhookTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+use Aftandilmmd\WorkflowAutomation\Enums\WebhookAuthType;
+
 // app/Console/Commands/SetupStripeWebhook.php
 
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
@@ -71,79 +79,93 @@ class SetupStripeWebhook extends Command
         $workflow = Workflow::create(['name' => 'Stripe Webhook Handler']);
 
         // 1. Webhook trigger — Stripe POSTs here with bearer auth
-        $trigger = $workflow->addNode('Stripe Webhook', 'webhook', [
-            'method'     => 'POST',
-            'auth_type'  => 'bearer',
-            'auth_value' => config('services.stripe.webhook_secret'),
-        ]);
+        $trigger = $workflow->addNode(
+            WebhookTriggerNode::make()
+                ->title('Stripe Webhook')
+                ->method(HttpMethod::Post)
+                ->authType(WebhookAuthType::Bearer)
+                ->authValue(config('services.stripe.webhook_secret'))
+        );
 
         // 2. Route by Stripe event type
-        $router = $workflow->addNode('Route by Event', 'switch', [
-            'field' => '{{ item.type }}',
-            'cases' => [
-                ['port' => 'case_payment_succeeded', 'operator' => 'equals', 'value' => 'payment_intent.succeeded'],
-                ['port' => 'case_payment_failed',    'operator' => 'equals', 'value' => 'payment_intent.payment_failed'],
-                ['port' => 'case_refund',            'operator' => 'equals', 'value' => 'charge.refunded'],
-            ],
-            'fallthrough' => false, // Ignore unhandled event types
-        ]);
+        $router = $workflow->addNode(
+            SwitchNode::make()
+                ->title('Route by Event')
+                ->field('{{ item.type }}')
+                ->case('case_payment_succeeded', ConditionOperator::Equals, 'payment_intent.succeeded')
+                ->case('case_payment_failed', ConditionOperator::Equals, 'payment_intent.payment_failed')
+                ->case('case_refund', ConditionOperator::Equals, 'charge.refunded')
+                ->fallthrough(false)
+        );
 
         // --- Payment Succeeded Branch ---
 
-        $updatePaid = $workflow->addNode('Mark Order Paid', 'update_model', [
-            'model'      => 'App\\Models\\Order',
-            'find_by'    => 'stripe_payment_intent_id',
-            'find_value' => '{{ item.data.object.id }}',
-            'fields'     => [
-                'status'  => 'paid',
-                'paid_at' => '{{ now() }}',
-            ],
-        ]);
+        $updatePaid = $workflow->addNode(
+            UpdateModelNode::make()
+                ->title('Mark Order Paid')
+                ->model('App\\Models\\Order')
+                ->findBy('stripe_payment_intent_id')
+                ->findValue('{{ item.data.object.id }}')
+                ->fields([
+                            'status'  => 'paid',
+                            'paid_at' => '{{ now() }}',
+                        ])
+        );
 
-        $receiptEmail = $workflow->addNode('Send Receipt', 'send_mail', [
-            'to'      => '{{ item.data.object.receipt_email }}',
-            'subject' => 'Payment received — ${{ item.data.object.amount / 100 }}',
-            'body'    => 'Thank you for your payment of ${{ item.data.object.amount / 100 }}. Your order has been confirmed.',
-            'is_html' => false,
-        ]);
+        $receiptEmail = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Send Receipt')
+                ->to('{{ item.data.object.receipt_email }}')
+                ->subject('Payment received — ${{ item.data.object.amount / 100 }}')
+                ->body('Thank you for your payment of ${{ item.data.object.amount / 100 }}. Your order has been confirmed.')
+                ->isHtml(false)
+        );
 
         // --- Payment Failed Branch ---
 
-        $failureEmail = $workflow->addNode('Payment Failure Notice', 'send_mail', [
-            'to'      => '{{ item.data.object.receipt_email }}',
-            'subject' => 'Payment failed — please update your card',
-            'body'    => 'Your payment of ${{ item.data.object.amount / 100 }} could not be processed. Please update your payment method and try again.',
-            'is_html' => false,
-        ]);
+        $failureEmail = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Payment Failure Notice')
+                ->to('{{ item.data.object.receipt_email }}')
+                ->subject('Payment failed — please update your card')
+                ->body('Your payment of ${{ item.data.object.amount / 100 }} could not be processed. Please update your payment method and try again.')
+                ->isHtml(false)
+        );
 
-        $retryCharge = $workflow->addNode('Retry Charge', 'http_request', [
-            'url'    => 'https://api.stripe.com/v1/payment_intents/{{ item.data.object.id }}/confirm',
-            'method' => 'POST',
-            'headers' => [
-                'Authorization' => 'Bearer {{ env.STRIPE_SECRET_KEY }}',
-                'Content-Type'  => 'application/x-www-form-urlencoded',
-            ],
-            'timeout' => 30,
-        ]);
+        $retryCharge = $workflow->addNode(
+            HttpRequestNode::make()
+                ->title('Retry Charge')
+                ->url('https://api.stripe.com/v1/payment_intents/{{ item.data.object.id }}/confirm')
+                ->method(HttpMethod::Post)
+                ->headers([
+                            'Authorization' => 'Bearer {{ env.STRIPE_SECRET_KEY }}',
+                            'Content-Type'  => 'application/x-www-form-urlencoded',
+                        ])
+                ->timeout(30)
+        );
 
         // --- Refund Branch ---
 
-        $updateRefunded = $workflow->addNode('Mark Order Refunded', 'update_model', [
-            'model'      => 'App\\Models\\Order',
-            'find_by'    => 'stripe_charge_id',
-            'find_value' => '{{ item.data.object.id }}',
-            'fields'     => [
-                'status'      => 'refunded',
-                'refunded_at' => '{{ now() }}',
-            ],
-        ]);
+        $updateRefunded = $workflow->addNode(
+            UpdateModelNode::make()
+                ->title('Mark Order Refunded')
+                ->model('App\\Models\\Order')
+                ->findBy('stripe_charge_id')
+                ->findValue('{{ item.data.object.id }}')
+                ->fields([
+                            'status'      => 'refunded',
+                            'refunded_at' => '{{ now() }}',
+                        ])
+        );
 
-        $refundEmail = $workflow->addNode('Refund Confirmation', 'send_mail', [
-            'to'      => '{{ item.data.object.receipt_email }}',
-            'subject' => 'Refund processed — ${{ item.data.object.amount_refunded / 100 }}',
-            'body'    => 'Your refund of ${{ item.data.object.amount_refunded / 100 }} has been processed. It may take 5-10 business days to appear on your statement.',
-            'is_html' => false,
-        ]);
+        $refundEmail = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Refund Confirmation')
+                ->to('{{ item.data.object.receipt_email }}')
+                ->subject('Refund processed — ${{ item.data.object.amount_refunded / 100 }}')
+                ->body('Your refund of ${{ item.data.object.amount_refunded / 100 }} has been processed. It may take 5-10 business days to appear on your statement.')
+                ->isHtml(false)
+        );
 
         // Wire the graph
         $trigger->connect($router);

@@ -3,12 +3,14 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Controls;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\MergeNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\NodeInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
+use Aftandilmmd\WorkflowAutomation\Enums\MergeMode;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 
-#[AsWorkflowNode(key: 'merge', type: NodeType::Control, label: 'Merge')]
+#[AsWorkflowNode(key: 'merge', type: NodeType::Control, label: 'Merge', builder: MergeNode::class)]
 class MergeControl implements NodeInterface
 {
     use \Aftandilmmd\WorkflowAutomation\Nodes\HasDocumentation;
@@ -26,7 +28,7 @@ class MergeControl implements NodeInterface
     public static function configSchema(): array
     {
         return [
-            ['key' => 'mode', 'type' => 'select', 'label' => 'Merge Mode', 'options' => ['append', 'zip', 'wait_all'], 'required' => false],
+            ['key' => 'mode', 'type' => 'select', 'label' => 'Merge Mode', 'options' => array_column(MergeMode::cases(), 'value'), 'required' => false],
         ];
     }
 

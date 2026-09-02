@@ -4,6 +4,20 @@ Sends a Laravel notification to a notifiable model for each item.
 
 **Node key:** `send_notification` · **Type:** Action
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendNotificationNode;
+
+SendNotificationNode::make()
+    ->title('Notify Customer')
+    ->notificationClass(OrderShipped::class)
+    ->notifiableClass(User::class)
+    ->notifiableId('{{ item.user_id }}');
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |
@@ -33,11 +47,15 @@ For each input item:
 ## Example
 
 ```php
-$notify = $workflow->addNode('Notify Customer', 'send_notification', [
-    'notification_class' => 'App\\Notifications\\OrderShipped',
-    'notifiable_class'   => 'App\\Models\\User',
-    'notifiable_id'      => '{{ item.user_id }}',
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendNotificationNode;
+
+$notify = $workflow->addNode(
+    SendNotificationNode::make()
+        ->title('Notify Customer')
+        ->notificationClass('App\\Notifications\\OrderShipped')
+        ->notifiableClass('App\\Models\\User')
+        ->notifiableId('{{ item.user_id }}')
+);
 ```
 
 Your notification class receives the full item:

@@ -4,6 +4,22 @@ Evaluates conditions against each item and keeps only those that match. Unmatche
 
 **Node key:** `filter` · **Type:** Utility
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\FilterNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+use Aftandilmmd\WorkflowAutomation\Enums\FilterLogic;
+
+FilterNode::make()
+    ->title('Active Big Spenders')
+    ->condition('status', ConditionOperator::Equals, 'active')
+    ->condition('total', ConditionOperator::GreaterOrEqual, 1000)
+    ->logic(FilterLogic::And);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |
@@ -44,13 +60,17 @@ Dropped: [{revenue: 0}]
 ## Example
 
 ```php
-$filter = $workflow->addNode('Active High-Value', 'filter', [
-    'conditions' => [
-        ['field' => 'status',  'operator' => 'equals',       'value' => 'active'],
-        ['field' => 'revenue', 'operator' => 'greater_than', 'value' => '100'],
-    ],
-    'logic' => 'and',
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\FilterNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+use Aftandilmmd\WorkflowAutomation\Enums\FilterLogic;
+
+$filter = $workflow->addNode(
+    FilterNode::make()
+        ->title('Active High-Value')
+        ->condition('status', ConditionOperator::Equals, 'active')
+        ->condition('revenue', ConditionOperator::GreaterThan, '100')
+        ->logic(FilterLogic::And)
+);
 ```
 
 ## Input / Output Example

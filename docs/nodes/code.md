@@ -6,6 +6,22 @@ Evaluates custom expressions against each item. Inline transformations and filte
 
 **Node key:** `code` · **Type:** Code
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\CodeNode;
+use Aftandilmmd\WorkflowAutomation\Enums\CodeMode;
+
+CodeNode::transform('{{ item.total - item.cost }}')
+    ->title('Compute Margin');
+
+CodeNode::make()
+    ->mode(CodeMode::Filter)
+    ->expression('{{ item.total > 100 }}');
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |
@@ -42,20 +58,30 @@ The expression result determines if the item is kept:
 **Transform — compute a value:**
 
 ```php
-$code = $workflow->addNode('Discount', 'code', [
-    'mode'       => 'transform',
-    'expression' => '{{ item.price * (1 - item.discount_pct / 100) }}',
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\CodeNode;
+use Aftandilmmd\WorkflowAutomation\Enums\CodeMode;
+
+$code = $workflow->addNode(
+    CodeNode::make()
+        ->title('Discount')
+        ->mode(CodeMode::Transform)
+        ->expression('{{ item.price * (1 - item.discount_pct / 100) }}')
+);
 // Output: item + {_result: 85.50}
 ```
 
 **Filter — keep matching items:**
 
 ```php
-$code = $workflow->addNode('Adults Only', 'code', [
-    'mode'       => 'filter',
-    'expression' => '{{ item.age >= 18 && item.verified == true }}',
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\CodeNode;
+use Aftandilmmd\WorkflowAutomation\Enums\CodeMode;
+
+$code = $workflow->addNode(
+    CodeNode::make()
+        ->title('Adults Only')
+        ->mode(CodeMode::Filter)
+        ->expression('{{ item.age >= 18 && item.verified == true }}')
+);
 ```
 
 ## Input / Output Example
@@ -83,42 +109,62 @@ The Code node supports full boolean logic with `&&`, `||`, `!`, and parentheses 
 ### Nested AND / OR
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\CodeNode;
+use Aftandilmmd\WorkflowAutomation\Enums\CodeMode;
+
 // (active AND high-value) OR VIP customer
-$code = $workflow->addNode('Qualified Lead', 'code', [
-    'mode'       => 'filter',
-    'expression' => '{{ (item.status == "active" && item.total > 500) || item.vip == true }}',
-]);
+$code = $workflow->addNode(
+    CodeNode::make()
+        ->title('Qualified Lead')
+        ->mode(CodeMode::Filter)
+        ->expression('{{ (item.status == "active" && item.total > 500) || item.vip == true }}')
+);
 ```
 
 ### Multiple field checks with functions
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\CodeNode;
+use Aftandilmmd\WorkflowAutomation\Enums\CodeMode;
+
 // Gmail users who signed up in the last 7 days and have verified email
-$code = $workflow->addNode('Recent Gmail Users', 'code', [
-    'mode'       => 'filter',
-    'expression' => '{{ ends_with(item.email, "gmail.com") && date_diff(item.created_at, now(), "days") <= 7 && item.email_verified == true }}',
-]);
+$code = $workflow->addNode(
+    CodeNode::make()
+        ->title('Recent Gmail Users')
+        ->mode(CodeMode::Filter)
+        ->expression('{{ ends_with(item.email, "gmail.com") && date_diff(item.created_at, now(), "days") <= 7 && item.email_verified == true }}')
+);
 ```
 
 ### Computed transform with conditions
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\CodeNode;
+use Aftandilmmd\WorkflowAutomation\Enums\CodeMode;
+
 // Assign tier based on multiple criteria
-$code = $workflow->addNode('Assign Tier', 'code', [
-    'mode'       => 'transform',
-    'expression' => '{{ item.total > 1000 && item.orders_count > 5 ? "gold" : (item.total > 500 ? "silver" : "bronze") }}',
-]);
+$code = $workflow->addNode(
+    CodeNode::make()
+        ->title('Assign Tier')
+        ->mode(CodeMode::Transform)
+        ->expression('{{ item.total > 1000 && item.orders_count > 5 ? "gold" : (item.total > 500 ? "silver" : "bronze") }}')
+);
 // Output: item + {_result: "gold"}
 ```
 
 ### Combining array functions with logic
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\CodeNode;
+use Aftandilmmd\WorkflowAutomation\Enums\CodeMode;
+
 // Orders with more than 3 line items totaling over $200
-$code = $workflow->addNode('Large Orders', 'code', [
-    'mode'       => 'filter',
-    'expression' => '{{ count(item.line_items) > 3 && sum(pluck(item.line_items, "price")) > 200 }}',
-]);
+$code = $workflow->addNode(
+    CodeNode::make()
+        ->title('Large Orders')
+        ->mode(CodeMode::Filter)
+        ->expression('{{ count(item.line_items) > 3 && sum(pluck(item.line_items, "price")) > 200 }}')
+);
 ```
 
 ::: tip When to use Code vs IF Condition

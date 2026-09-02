@@ -4,6 +4,18 @@ Pauses a workflow and waits for an external signal before continuing. Enables hu
 
 **Node key:** `wait_resume` · **Type:** Control
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\WaitResumeNode;
+
+WaitResumeNode::make()
+    ->title('Await Approval')
+    ->timeoutSeconds(86400);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |
@@ -54,28 +66,40 @@ Content-Type: application/json
 ## Example: Purchase Approval
 
 ```php
-$notify = $workflow->addNode('Request Approval', 'send_mail', [
-    'to'      => '{{ item.manager_email }}',
-    'subject' => 'PO #{{ item.id }} needs approval (${{ item.total }})',
-    'body'    => 'Please review and approve.',
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\UpdateModelNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\WaitResumeNode;
 
-$wait = $workflow->addNode('Await Approval', 'wait_resume', [
-    'timeout_seconds' => 86400, // 24 hours
-]);
+$notify = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Request Approval')
+        ->to('{{ item.manager_email }}')
+        ->subject('PO #{{ item.id }} needs approval (${{ item.total }})')
+        ->body('Please review and approve.')
+);
 
-$approve = $workflow->addNode('Process PO', 'update_model', [
-    'model'      => 'App\\Models\\PurchaseOrder',
-    'find_by'    => 'id',
-    'find_value' => '{{ item.id }}',
-    'fields'     => ['status' => 'approved'],
-]);
+$wait = $workflow->addNode(
+    WaitResumeNode::make()
+        ->title('Await Approval')
+        ->timeoutSeconds(86400)
+);
 
-$escalate = $workflow->addNode('Escalate', 'send_mail', [
-    'to'      => 'director@example.com',
-    'subject' => 'PO #{{ item.id }} timed out',
-    'body'    => 'Manager did not approve within 24 hours.',
-]);
+$approve = $workflow->addNode(
+    UpdateModelNode::make()
+        ->title('Process PO')
+        ->model('App\\Models\\PurchaseOrder')
+        ->findBy('id')
+        ->findValue('{{ item.id }}')
+        ->fields(['status' => 'approved'])
+);
+
+$escalate = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Escalate')
+        ->to('director@example.com')
+        ->subject('PO #{{ item.id }} timed out')
+        ->body('Manager did not approve within 24 hours.')
+);
 
 $notify->connect($wait);
 $wait->connect($approve, 'resume');

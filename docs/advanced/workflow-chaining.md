@@ -33,33 +33,51 @@ Use the Sub Workflow control node when the **parent workflow needs the child's r
 ### Example: Order with Validation
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\IfConditionNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\SubWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\SetFieldsNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+
 $orderWorkflow = Workflow::create(['name' => 'Process Order']);
 
-$trigger = $orderWorkflow->addNode('New Order', 'manual');
+$trigger = $orderWorkflow->addNode(
+    ManualTriggerNode::make()
+        ->title('New Order')
+);
 
 // Call validation workflow and wait for result
-$validate = $orderWorkflow->addNode('Validate', 'sub_workflow', [
-    'workflow_id'     => $validationWorkflow->id,
-    'pass_items'      => true,
-    'wait_for_result' => true,
-]);
+$validate = $orderWorkflow->addNode(
+    SubWorkflowNode::make()
+        ->title('Validate')
+        ->workflowId($validationWorkflow->id)
+        ->passItems()
+        ->waitForResult()
+);
 
 // Use validation result to decide next step
-$check = $orderWorkflow->addNode('Check Result', 'if_condition', [
-    'field'    => 'status',
-    'operator' => 'equals',
-    'value'    => 'completed',
-]);
+$check = $orderWorkflow->addNode(
+    IfConditionNode::make()
+        ->title('Check Result')
+        ->field('status')
+        ->operator(ConditionOperator::Equals)
+        ->value('completed')
+);
 
-$process = $orderWorkflow->addNode('Process', 'set_fields', [
-    'fields' => ['status' => 'processing'],
-]);
+$process = $orderWorkflow->addNode(
+    SetFieldsNode::make()
+        ->title('Process')
+        ->fields(['status' => 'processing'])
+);
 
-$reject = $orderWorkflow->addNode('Reject', 'send_mail', [
-    'to'      => '{{ item.output.customer_email }}',
-    'subject' => 'Order rejected',
-    'body'    => 'Your order could not be validated.',
-]);
+$reject = $orderWorkflow->addNode(
+    SendMailNode::make()
+        ->title('Reject')
+        ->to('{{ item.output.customer_email }}')
+        ->subject('Order rejected')
+        ->body('Your order could not be validated.')
+);
 
 $trigger->connect($validate);
 $validate->connect($check);                           // main → check
@@ -108,40 +126,59 @@ Use the Workflow Trigger when **workflows should be independent**. The source wo
 ### Example: Independent Pipeline
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\SetFieldsNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ScheduleTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WorkflowTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+use Aftandilmmd\WorkflowAutomation\Enums\WorkflowTriggerOn;
+
 // Team A builds the import workflow — they don't know or care about downstream
 $importWf = Workflow::create(['name' => 'Data Import']);
-$importTrigger = $importWf->addNode('Start', 'schedule', [
-    'expression' => '0 * * * *', // hourly
-]);
-$fetch = $importWf->addNode('Fetch Data', 'http_request', [
-    'url' => 'https://api.example.com/data',
-]);
+$importTrigger = $importWf->addNode(
+    ScheduleTriggerNode::make()
+        ->title('Start')
+        ->cron('0 * * * *') // hourly
+);
+$fetch = $importWf->addNode(
+    HttpRequestNode::make()
+        ->title('Fetch Data')
+        ->url('https://api.example.com/data')
+);
 $importTrigger->connect($fetch);
 $importWf->activate();
 
 // Team B builds the processing workflow — listens to import
 $processWf = Workflow::create(['name' => 'Data Processing']);
-$processTrigger = $processWf->addNode('Import Done', 'workflow', [
-    'source_workflow_id' => $importWf->id,
-    'trigger_on'         => 'completed',
-]);
-$transform = $processWf->addNode('Transform', 'set_fields', [
-    'fields' => ['processed_at' => '{{ now() }}'],
-]);
+$processTrigger = $processWf->addNode(
+    WorkflowTriggerNode::make()
+        ->title('Import Done')
+        ->sourceWorkflowId($importWf->id)
+        ->triggerOn(WorkflowTriggerOn::Completed)
+);
+$transform = $processWf->addNode(
+    SetFieldsNode::make()
+        ->title('Transform')
+        ->fields(['processed_at' => '{{ now() }}'])
+);
 $processTrigger->connect($transform);
 $processWf->activate();
 
 // Team C builds the export workflow — listens to processing
 $exportWf = Workflow::create(['name' => 'Data Export']);
-$exportTrigger = $exportWf->addNode('Processing Done', 'workflow', [
-    'source_workflow_id' => $processWf->id,
-    'trigger_on'         => 'completed',
-]);
-$export = $exportWf->addNode('Export', 'http_request', [
-    'url'    => 'https://warehouse.example.com/import',
-    'method' => 'POST',
-    'body'   => '{{ item.data }}',
-]);
+$exportTrigger = $exportWf->addNode(
+    WorkflowTriggerNode::make()
+        ->title('Processing Done')
+        ->sourceWorkflowId($processWf->id)
+        ->triggerOn(WorkflowTriggerOn::Completed)
+);
+$export = $exportWf->addNode(
+    HttpRequestNode::make()
+        ->title('Export')
+        ->url('https://warehouse.example.com/import')
+        ->method(HttpMethod::Post)
+        ->body('{{ item.data }}')
+);
 $exportTrigger->connect($export);
 $exportWf->activate();
 ```
@@ -151,28 +188,37 @@ $exportWf->activate();
 ### Example: Fan-out
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WorkflowTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\WorkflowTriggerOn;
+
 // When the daily report workflow completes, notify 3 different channels
 // Each notification workflow is independent
 
 $slackNotify = Workflow::create(['name' => 'Slack Notification']);
-$slackNotify->addNode('Report Done', 'workflow', [
-    'source_workflow_id' => $reportWorkflow->id,
-    'trigger_on'         => 'completed',
-]);
+$slackNotify->addNode(
+    WorkflowTriggerNode::make()
+        ->title('Report Done')
+        ->sourceWorkflowId($reportWorkflow->id)
+        ->triggerOn(WorkflowTriggerOn::Completed)
+);
 // ... slack notification nodes
 
 $emailNotify = Workflow::create(['name' => 'Email Digest']);
-$emailNotify->addNode('Report Done', 'workflow', [
-    'source_workflow_id' => $reportWorkflow->id,
-    'trigger_on'         => 'completed',
-]);
+$emailNotify->addNode(
+    WorkflowTriggerNode::make()
+        ->title('Report Done')
+        ->sourceWorkflowId($reportWorkflow->id)
+        ->triggerOn(WorkflowTriggerOn::Completed)
+);
 // ... email nodes
 
 $dashboardUpdate = Workflow::create(['name' => 'Update Dashboard']);
-$dashboardUpdate->addNode('Report Done', 'workflow', [
-    'source_workflow_id' => $reportWorkflow->id,
-    'trigger_on'         => 'completed',
-]);
+$dashboardUpdate->addNode(
+    WorkflowTriggerNode::make()
+        ->title('Report Done')
+        ->sourceWorkflowId($reportWorkflow->id)
+        ->triggerOn(WorkflowTriggerOn::Completed)
+);
 // ... dashboard update nodes
 ```
 
@@ -181,18 +227,27 @@ With Sub Workflow, the report workflow would need 3 sub_workflow nodes and would
 ### Example: Global Error Handler
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendNotificationNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WorkflowTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\WorkflowTriggerOn;
+
 // One workflow catches ALL failures across the system
 $errorHandler = Workflow::create(['name' => 'Error Alert']);
 
-$trigger = $errorHandler->addNode('Any Failure', 'workflow', [
-    'source_workflow_id' => null, // null = listen to ALL workflows
-    'trigger_on'         => 'failed',
-]);
+$trigger = $errorHandler->addNode(
+    WorkflowTriggerNode::make()
+        ->title('Any Failure')
+        ->sourceWorkflowId(null)
+        ->triggerOn(WorkflowTriggerOn::Failed)
+);
 
-$alert = $errorHandler->addNode('Send Alert', 'send_notification', [
-    'channel' => 'slack',
-    'message' => 'Workflow #{{ item.source_workflow_id }} failed (run #{{ item.source_run_id }}): {{ item.error_message }}',
-]);
+$alert = $errorHandler->addNode(
+    SendNotificationNode::make()
+        ->title('Send Alert')
+        ->notificationClass(WorkflowFailed::class)
+        ->notifiableClass(User::class)
+        ->notifiableId('{{ item.owner_id }}')
+);
 
 $trigger->connect($alert);
 $errorHandler->activate();

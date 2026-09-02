@@ -6,6 +6,21 @@ Parses raw data from a field (JSON, CSV, or query string) into structured data.
 
 **Node key:** `parse_data` · **Type:** Transformer
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\ParseDataNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ParseFormat;
+
+ParseDataNode::make()
+    ->title('Parse Webhook Body')
+    ->sourceField('{{ item.raw_body }}')
+    ->format(ParseFormat::Json)
+    ->targetField('payload');
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |
@@ -37,21 +52,32 @@ Parses raw data from a field (JSON, CSV, or query string) into structured data.
 An HTTP Request node fetches order data from an external API. The response body comes back as a raw JSON string — Parse Data turns it into a usable array.
 
 ```php
-$fetch = $workflow->addNode('Fetch Order', 'http_request', [
-    'url'    => 'https://api.store.com/orders/{{ item.order_id }}',
-    'method' => 'GET',
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\ParseDataNode;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
 
-$parse = $workflow->addNode('Parse Response', 'parse_data', [
-    'source_field' => 'response_body',   // raw JSON string from the HTTP node
-    'format'       => 'json',
-    'target_field' => 'order',           // parsed array available as {{ item.order }}
-]);
+$fetch = $workflow->addNode(
+    HttpRequestNode::make()
+        ->title('Fetch Order')
+        ->url('https://api.store.com/orders/{{ item.order_id }}')
+        ->method(HttpMethod::Get)
+);
 
-$notify = $workflow->addNode('Notify Customer', 'send_mail', [
-    'to'      => '{{ item.order.customer.email }}',
-    'subject' => 'Your order #{{ item.order.id }} has shipped!',
-]);
+$parse = $workflow->addNode(
+    ParseDataNode::make()
+        ->title('Parse Response')
+        ->sourceField('response_body')
+        ->format(ParseFormat::Json)
+        ->targetField('order')
+);
+
+$notify = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Notify Customer')
+        ->to('{{ item.order.customer.email }}')
+        ->subject('Your order #{{ item.order.id }} has shipped!')
+);
 
 $fetch->connect($parse);
 $parse->connect($notify);
@@ -80,22 +106,37 @@ $parse->connect($notify);
 A webhook receives a CSV file. Parse Data splits it into rows, then a Loop node processes each contact.
 
 ```php
-$webhook = $workflow->addNode('CSV Upload', 'webhook', []);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\LoopNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\ParseDataNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WebhookTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ParseFormat;
 
-$parse = $workflow->addNode('Parse CSV', 'parse_data', [
-    'source_field' => 'csv_body',
-    'format'       => 'csv',
-    'target_field' => 'contacts',
-]);
+$webhook = $workflow->addNode(
+    WebhookTriggerNode::make()
+        ->title('CSV Upload')
+);
 
-$loop = $workflow->addNode('Each Contact', 'loop', [
-    'source_field' => 'contacts',
-]);
+$parse = $workflow->addNode(
+    ParseDataNode::make()
+        ->title('Parse CSV')
+        ->sourceField('csv_body')
+        ->format(ParseFormat::Csv)
+        ->targetField('contacts')
+);
 
-$mail = $workflow->addNode('Send Welcome', 'send_mail', [
-    'to'      => '{{ item.email }}',
-    'subject' => 'Welcome, {{ item.name }}!',
-]);
+$loop = $workflow->addNode(
+    LoopNode::make()
+        ->title('Each Contact')
+        ->sourceField('contacts')
+);
+
+$mail = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Send Welcome')
+        ->to('{{ item.email }}')
+        ->subject('Welcome, {{ item.name }}!')
+);
 
 $webhook->connect($parse);
 $parse->connect($loop);
@@ -126,13 +167,22 @@ Bob,bob@example.com,editor
 A webhook receives URL-encoded form data. Parse Data converts it into key-value pairs.
 
 ```php
-$webhook = $workflow->addNode('Form Submit', 'webhook', []);
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\ParseDataNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WebhookTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ParseFormat;
 
-$parse = $workflow->addNode('Parse Form', 'parse_data', [
-    'source_field' => 'body',
-    'format'       => 'key_value',
-    'target_field' => 'form',
-]);
+$webhook = $workflow->addNode(
+    WebhookTriggerNode::make()
+        ->title('Form Submit')
+);
+
+$parse = $workflow->addNode(
+    ParseDataNode::make()
+        ->title('Parse Form')
+        ->sourceField('body')
+        ->format(ParseFormat::KeyValue)
+        ->targetField('form')
+);
 
 $webhook->connect($parse);
 ```

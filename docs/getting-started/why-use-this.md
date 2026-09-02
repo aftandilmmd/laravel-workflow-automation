@@ -100,21 +100,95 @@ class OrderController {
 The automation moves into a workflow — created once via PHP, the visual editor, or the REST API:
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\UpdateModelNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\IfConditionNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ModelEventTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+use Aftandilmmd\WorkflowAutomation\Enums\ModelEvent;
+
 $workflow = Workflow::create(['name' => 'Order Automation']);
 
-$trigger      = $workflow->addNode('Order Created',      'model_event',   ['model' => Order::class, 'events' => ['created']]);
-$confirm      = $workflow->addNode('Confirmation Email',  'send_mail',     ['to' => '{{ item.user.email }}', 'subject' => 'Order #{{ item.id }} confirmed']);
-$fraudCheck   = $workflow->addNode('Fraud Check',         'http_request',  ['url' => 'https://fraud.example.com/check', 'method' => 'POST']);
-$fraudGate    = $workflow->addNode('High Risk?',          'if_condition',  ['field' => '{{ nodes.Fraud Check.risk }}', 'operator' => '==', 'value' => 'high']);
-$holdOrder    = $workflow->addNode('Hold Order',          'update_model',  ['model' => Order::class, 'fields' => ['status' => 'on_hold']]);
-$securityMail = $workflow->addNode('Alert Security',      'send_mail',     ['to' => 'security@company.com', 'subject' => 'Fraud alert: Order #{{ item.id }}']);
-$slack        = $workflow->addNode('Slack Notify',        'http_request',  ['url' => 'https://hooks.slack.com/...', 'method' => 'POST']);
-$highValue    = $workflow->addNode('High Value?',         'if_condition',  ['field' => '{{ item.total }}', 'operator' => '>', 'value' => '1000']);
-$manager      = $workflow->addNode('Notify Manager',      'send_mail',     ['to' => 'manager@company.com', 'subject' => 'High-value order #{{ item.id }}']);
-$warehouse    = $workflow->addNode('US Customer?',        'if_condition',  ['field' => '{{ item.shipping_country }}', 'operator' => '==', 'value' => 'US']);
-$warehouseUS  = $workflow->addNode('Fulfill US',          'send_mail',     ['to' => 'warehouse-us@company.com']);
-$warehouseEU  = $workflow->addNode('Fulfill EU',          'send_mail',     ['to' => 'warehouse-eu@company.com']);
-$analytics    = $workflow->addNode('Analytics',           'http_request',  ['url' => 'https://analytics.example.com/events', 'method' => 'POST']);
+$trigger      = $workflow->addNode(
+    ModelEventTriggerNode::make()
+        ->title('Order Created')
+        ->model(Order::class)
+        ->events([ModelEvent::Created])
+);
+$confirm      = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Confirmation Email')
+        ->to('{{ item.user.email }}')
+        ->subject('Order #{{ item.id }} confirmed')
+);
+$fraudCheck   = $workflow->addNode(
+    HttpRequestNode::make()
+        ->title('Fraud Check')
+        ->url('https://fraud.example.com/check')
+        ->method(HttpMethod::Post)
+);
+$fraudGate    = $workflow->addNode(
+    IfConditionNode::make()
+        ->title('High Risk?')
+        ->field('{{ nodes.Fraud Check.risk }}')
+        ->operator('==')
+        ->value('high')
+);
+$holdOrder    = $workflow->addNode(
+    UpdateModelNode::make()
+        ->title('Hold Order')
+        ->model(Order::class)
+        ->fields(['status' => 'on_hold'])
+);
+$securityMail = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Alert Security')
+        ->to('security@company.com')
+        ->subject('Fraud alert: Order #{{ item.id }}')
+);
+$slack        = $workflow->addNode(
+    HttpRequestNode::make()
+        ->title('Slack Notify')
+        ->url('https://hooks.slack.com/...')
+        ->method(HttpMethod::Post)
+);
+$highValue    = $workflow->addNode(
+    IfConditionNode::make()
+        ->title('High Value?')
+        ->field('{{ item.total }}')
+        ->operator('>')
+        ->value('1000')
+);
+$manager      = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Notify Manager')
+        ->to('manager@company.com')
+        ->subject('High-value order #{{ item.id }}')
+);
+$warehouse    = $workflow->addNode(
+    IfConditionNode::make()
+        ->title('US Customer?')
+        ->field('{{ item.shipping_country }}')
+        ->operator('==')
+        ->value('US')
+);
+$warehouseUS  = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Fulfill US')
+        ->to('warehouse-us@company.com')
+);
+$warehouseEU  = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Fulfill EU')
+        ->to('warehouse-eu@company.com')
+);
+$analytics    = $workflow->addNode(
+    HttpRequestNode::make()
+        ->title('Analytics')
+        ->url('https://analytics.example.com/events')
+        ->method(HttpMethod::Post)
+);
 
 // Connect the flow
 $trigger->connect($confirm)->connect($fraudCheck)->connect($fraudGate);

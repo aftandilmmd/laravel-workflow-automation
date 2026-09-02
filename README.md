@@ -108,15 +108,26 @@ Open `http://your-app.test/workflow-editor` and you're done.
 A complete welcome-email workflow, defined fluently:
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ModelEventTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ModelEvent;
+
 $workflow = Workflow::create(['name' => 'Welcome Email']);
 
 $workflow
-    ->addNode('User Created', 'model_event', ['model' => User::class, 'events' => ['created']])
-    ->connect($workflow->addNode('Send Welcome', 'send_mail', [
-        'to'      => '{{ item.email }}',
-        'subject' => 'Welcome, {{ item.name }}!',
-        'body'    => 'Thanks for signing up.',
-    ]));
+    ->addNode(
+        ModelEventTriggerNode::make()
+            ->title('User Created')
+            ->model(User::class)
+            ->events([ModelEvent::Created])
+    )
+    ->connect($workflow->addNode(
+        SendMailNode::make()
+            ->title('Send Welcome')
+            ->to('{{ item.email }}')
+            ->subject('Welcome, {{ item.name }}!')
+            ->body('Thanks for signing up.')
+    ));
 
 $workflow->activate();
 ```

@@ -6,6 +6,23 @@ Evaluates each item against a condition and routes it to either the `true` or `f
 
 **Node key:** `if_condition` · **Type:** Condition
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\IfConditionNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+
+IfConditionNode::make()
+    ->title('VIP Check')
+    ->field('{{ item.total }}')
+    ->operator(ConditionOperator::GreaterThan)
+    ->value(500);
+
+IfConditionNode::when('{{ item.total }}', ConditionOperator::GreaterThan, 500);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |
@@ -60,14 +77,29 @@ Both output ports are optional — connect only what you need.
 ## Example
 
 ```php
-$check = $workflow->addNode('Is VIP?', 'if_condition', [
-    'field'    => '{{ item.total }}',
-    'operator' => 'greater_than',
-    'value'    => '500',
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\IfConditionNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
 
-$vipEmail = $workflow->addNode('VIP Email', 'send_mail', [...]);
-$stdEmail = $workflow->addNode('Standard Email', 'send_mail', [...]);
+$check = $workflow->addNode(
+    IfConditionNode::make()
+        ->title('Is VIP?')
+        ->field('{{ item.total }}')
+        ->operator(ConditionOperator::GreaterThan)
+        ->value('500')
+);
+
+$vipEmail = $workflow->addNode(
+    SendMailNode::make()
+        ->title('VIP Email')
+    // ...
+);
+
+$stdEmail = $workflow->addNode(
+    SendMailNode::make()
+        ->title('Standard Email')
+    // ...
+);
 
 $check->connect($vipEmail, 'true');
 $check->connect($stdEmail, 'false');

@@ -3,20 +3,22 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Actions;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\RunCommandNode;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
+use Aftandilmmd\WorkflowAutomation\Enums\CommandType;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 use Illuminate\Support\Facades\Artisan;
 use Symfony\Component\Process\Process;
 
-#[AsWorkflowNode(key: 'run_command', type: NodeType::Action, label: 'Run Command')]
+#[AsWorkflowNode(key: 'run_command', type: NodeType::Action, label: 'Run Command', builder: RunCommandNode::class)]
 class RunCommandAction extends BaseNode
 {
     public static function configSchema(): array
     {
         return [
-            ['key' => 'command_type', 'type' => 'select', 'label' => 'Command Type', 'required' => true, 'options' => ['artisan', 'shell']],
+            ['key' => 'command_type', 'type' => 'select', 'label' => 'Command Type', 'required' => true, 'options' => array_column(CommandType::cases(), 'value')],
             ['key' => 'command', 'type' => 'string', 'label' => 'Command', 'required' => true, 'supports_expression' => true],
             ['key' => 'arguments', 'type' => 'keyvalue', 'label' => 'Arguments', 'required' => false, 'supports_expression' => true],
             ['key' => 'timeout', 'type' => 'integer', 'label' => 'Timeout (seconds)', 'required' => false],

@@ -3,12 +3,13 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Actions;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\UpdateModelNode;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 
-#[AsWorkflowNode(key: 'update_model', type: NodeType::Action, label: 'Update Model')]
+#[AsWorkflowNode(key: 'update_model', type: NodeType::Action, label: 'Update Model', builder: UpdateModelNode::class)]
 class UpdateModelAction extends BaseNode
 {
     public static function configSchema(): array

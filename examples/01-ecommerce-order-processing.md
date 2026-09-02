@@ -17,6 +17,14 @@ When a customer places an order, check if it's high-value, notify the VIP team i
 Create an artisan command and run it once with `php artisan workflow:setup-orders`.
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\IfConditionNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\LoopNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+
 // app/Console/Commands/SetupOrderWorkflow.php
 
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
@@ -31,32 +39,43 @@ class SetupOrderWorkflow extends Command
     {
         $workflow = Workflow::create(['name' => 'Order Processing']);
 
-        $trigger = $workflow->addNode('New Order', 'manual');
+        $trigger = $workflow->addNode(
+            ManualTriggerNode::make()
+                ->title('New Order')
+        );
 
-        $checkAmount = $workflow->addNode('High Value?', 'if_condition', [
-            'field'    => 'total',
-            'operator' => 'greater_than',
-            'value'    => 500,
-        ]);
+        $checkAmount = $workflow->addNode(
+            IfConditionNode::make()
+                ->title('High Value?')
+                ->field('total')
+                ->operator(ConditionOperator::GreaterThan)
+                ->value(500)
+        );
 
-        $notifyVip = $workflow->addNode('Notify VIP Team', 'send_mail', [
-            'to'      => 'vip-team@store.com',
-            'subject' => 'VIP Order #{{ item.order_id }} — ${{ item.total }}',
-            'body'    => '{{ item.customer_name }} placed a ${{ item.total }} order.',
-        ]);
+        $notifyVip = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Notify VIP Team')
+                ->to('vip-team@store.com')
+                ->subject('VIP Order #{{ item.order_id }} — ${{ item.total }}')
+                ->body('{{ item.customer_name }} placed a ${{ item.total }} order.')
+        );
 
-        $loop = $workflow->addNode('Each Item', 'loop', [
-            'source_field' => 'items',
-        ]);
+        $loop = $workflow->addNode(
+            LoopNode::make()
+                ->title('Each Item')
+                ->sourceField('items')
+        );
 
-        $updateStock = $workflow->addNode('Update Stock', 'http_request', [
-            'url'    => 'https://inventory.api/stock/decrement',
-            'method' => 'POST',
-            'body'   => [
-                'sku'      => '{{ item._loop_item.sku }}',
-                'quantity' => '{{ item._loop_item.quantity }}',
-            ],
-        ]);
+        $updateStock = $workflow->addNode(
+            HttpRequestNode::make()
+                ->title('Update Stock')
+                ->url('https://inventory.api/stock/decrement')
+                ->method(HttpMethod::Post)
+                ->body([
+                            'sku'      => '{{ item._loop_item.sku }}',
+                            'quantity' => '{{ item._loop_item.quantity }}',
+                        ])
+        );
 
         // Edges
         $trigger->connect($checkAmount);

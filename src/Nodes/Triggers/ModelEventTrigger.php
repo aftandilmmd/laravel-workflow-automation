@@ -3,12 +3,14 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Triggers;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ModelEventTriggerNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\TriggerInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
+use Aftandilmmd\WorkflowAutomation\Enums\ModelEvent;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 
-#[AsWorkflowNode(key: 'model_event', type: NodeType::Trigger, label: 'Model Event')]
+#[AsWorkflowNode(key: 'model_event', type: NodeType::Trigger, label: 'Model Event', builder: ModelEventTriggerNode::class)]
 class ModelEventTrigger implements TriggerInterface
 {
     use \Aftandilmmd\WorkflowAutomation\Nodes\HasDocumentation;
@@ -27,7 +29,7 @@ class ModelEventTrigger implements TriggerInterface
     {
         return [
             ['key' => 'model', 'type' => 'model_select', 'label' => 'Model', 'required' => true],
-            ['key' => 'events', 'type' => 'multiselect', 'label' => 'Events', 'options_from' => 'model_events', 'required' => true],
+            ['key' => 'events', 'type' => 'multiselect', 'label' => 'Events', 'options_from' => 'model_events', 'options' => array_column(ModelEvent::cases(), 'value'), 'required' => true],
             ['key' => 'only_fields', 'type' => 'array', 'label' => 'Only when these fields change (updated only, empty = all)', 'required' => false],
         ];
     }

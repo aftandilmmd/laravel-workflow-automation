@@ -64,6 +64,15 @@ Run a 7-day drip campaign for new signups. A scheduled workflow runs daily, fetc
 ## Workflow Setup
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\DelayNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\LoopNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ScheduleTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\DelayUnit;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+use Aftandilmmd\WorkflowAutomation\Enums\ScheduleInterval;
+
 // app/Console/Commands/SetupDripCampaign.php
 
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
@@ -79,60 +88,76 @@ class SetupDripCampaign extends Command
         $workflow = Workflow::create(['name' => 'Email Drip Campaign']);
 
         // 1. Schedule trigger — runs every day at 9:00 AM
-        $trigger = $workflow->addNode('Daily 9 AM', 'schedule', [
-            'interval_type' => 'custom_cron',
-            'cron'          => '0 9 * * *',
-        ]);
+        $trigger = $workflow->addNode(
+            ScheduleTriggerNode::make()
+                ->title('Daily 9 AM')
+                ->intervalType(ScheduleInterval::CustomCron)
+                ->cron('0 9 * * *')
+        );
 
         // 2. Fetch users who signed up yesterday
-        $fetchSignups = $workflow->addNode('Fetch New Signups', 'http_request', [
-            'url'              => 'https://api.yourapp.com/api/signups?date=yesterday',
-            'method'           => 'GET',
-            'headers'          => ['Authorization' => 'Bearer {{ env.APP_API_TOKEN }}'],
-            'timeout'          => 15,
-            'include_response' => true,
-        ]);
+        $fetchSignups = $workflow->addNode(
+            HttpRequestNode::make()
+                ->title('Fetch New Signups')
+                ->url('https://api.yourapp.com/api/signups?date=yesterday')
+                ->method(HttpMethod::Get)
+                ->headers(['Authorization' => 'Bearer {{ env.APP_API_TOKEN }}'])
+                ->timeout(15)
+                ->includeResponse()
+        );
 
         // 3. Loop through each new user
-        $loop = $workflow->addNode('Each User', 'loop', [
-            'source_field' => 'users',
-        ]);
+        $loop = $workflow->addNode(
+            LoopNode::make()
+                ->title('Each User')
+                ->sourceField('users')
+        );
 
         // 4. Day 1 — Welcome email (sent immediately)
-        $welcomeEmail = $workflow->addNode('Day 1: Welcome', 'send_mail', [
-            'to'      => '{{ item._loop_item.email }}',
-            'subject' => 'Welcome to our platform, {{ item._loop_item.name }}!',
-            'body'    => 'Hi {{ item._loop_item.name }},\n\nWelcome aboard! We are excited to have you. Here is what you can do to get started:\n\n1. Complete your profile\n2. Explore the dashboard\n3. Connect your first integration\n\nSee you around!',
-            'is_html' => false,
-        ]);
+        $welcomeEmail = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Day 1: Welcome')
+                ->to('{{ item._loop_item.email }}')
+                ->subject('Welcome to our platform, {{ item._loop_item.name }}!')
+                ->body('Hi {{ item._loop_item.name }},\n\nWelcome aboard! We are excited to have you. Here is what you can do to get started:\n\n1. Complete your profile\n2. Explore the dashboard\n3. Connect your first integration\n\nSee you around!')
+                ->isHtml(false)
+        );
 
         // 5. Wait 3 days before the next email
-        $delay1 = $workflow->addNode('Wait 3 Days', 'delay', [
-            'delay_type'  => 'hours',
-            'delay_value' => 72,
-        ]);
+        $delay1 = $workflow->addNode(
+            DelayNode::make()
+                ->title('Wait 3 Days')
+                ->delayType(DelayUnit::Hours)
+                ->delayValue(72)
+        );
 
         // 6. Day 3 — Tips and tricks email
-        $tipsEmail = $workflow->addNode('Day 3: Tips', 'send_mail', [
-            'to'      => '{{ item._loop_item.email }}',
-            'subject' => '3 tips to get the most out of your account, {{ item._loop_item.name }}',
-            'body'    => 'Hi {{ item._loop_item.name }},\n\nYou have been with us for 3 days! Here are some tips:\n\n- Tip 1: Use keyboard shortcuts to save time\n- Tip 2: Set up notifications for important events\n- Tip 3: Check out our API docs for advanced integrations\n\nHappy building!',
-            'is_html' => false,
-        ]);
+        $tipsEmail = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Day 3: Tips')
+                ->to('{{ item._loop_item.email }}')
+                ->subject('3 tips to get the most out of your account, {{ item._loop_item.name }}')
+                ->body('Hi {{ item._loop_item.name }},\n\nYou have been with us for 3 days! Here are some tips:\n\n- Tip 1: Use keyboard shortcuts to save time\n- Tip 2: Set up notifications for important events\n- Tip 3: Check out our API docs for advanced integrations\n\nHappy building!')
+                ->isHtml(false)
+        );
 
         // 7. Wait 4 more days (day 3 → day 7)
-        $delay2 = $workflow->addNode('Wait 4 Days', 'delay', [
-            'delay_type'  => 'hours',
-            'delay_value' => 96,
-        ]);
+        $delay2 = $workflow->addNode(
+            DelayNode::make()
+                ->title('Wait 4 Days')
+                ->delayType(DelayUnit::Hours)
+                ->delayValue(96)
+        );
 
         // 8. Day 7 — Special offer email
-        $offerEmail = $workflow->addNode('Day 7: Special Offer', 'send_mail', [
-            'to'      => '{{ item._loop_item.email }}',
-            'subject' => 'A special offer just for you, {{ item._loop_item.name }}',
-            'body'    => 'Hi {{ item._loop_item.name }},\n\nYou have been exploring our platform for a week now. To thank you, here is an exclusive 20% discount on any Pro plan:\n\nUse code: WELCOME20\n\nThis offer expires in 48 hours. Upgrade now and unlock all features!\n\nCheers!',
-            'is_html' => false,
-        ]);
+        $offerEmail = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Day 7: Special Offer')
+                ->to('{{ item._loop_item.email }}')
+                ->subject('A special offer just for you, {{ item._loop_item.name }}')
+                ->body('Hi {{ item._loop_item.name }},\n\nYou have been exploring our platform for a week now. To thank you, here is an exclusive 20% discount on any Pro plan:\n\nUse code: WELCOME20\n\nThis offer expires in 48 hours. Upgrade now and unlock all features!\n\nCheers!')
+                ->isHtml(false)
+        );
 
         // Wire the graph
         $trigger->connect($fetchSignups);

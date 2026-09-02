@@ -3,12 +3,13 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Triggers;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\EventTriggerNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\TriggerInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 
-#[AsWorkflowNode(key: 'event', type: NodeType::Trigger, label: 'Event')]
+#[AsWorkflowNode(key: 'event', type: NodeType::Trigger, label: 'Event', builder: EventTriggerNode::class)]
 class EventTrigger implements TriggerInterface
 {
     use \Aftandilmmd\WorkflowAutomation\Nodes\HasDocumentation;

@@ -4,6 +4,21 @@ Routes error items to different ports based on regex pattern matching against th
 
 **Node key:** `error_handler` · **Type:** Control
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\ErrorHandlerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ErrorRoute;
+
+ErrorHandlerNode::make()
+    ->title('Classify Failures')
+    ->rule('/timeout|timed out/i', ErrorRoute::Retry)
+    ->rule('/validation/i', ErrorRoute::Ignore)
+    ->defaultRoute(ErrorRoute::Notify);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |
@@ -47,15 +62,18 @@ Regex patterns are tested case-insensitively.
 ## Example
 
 ```php
-$errorHandler = $workflow->addNode('Handle Errors', 'error_handler', [
-    'rules' => [
-        ['match' => 'timeout|timed out',    'route' => 'retry'],
-        ['match' => 'validation|invalid',   'route' => 'notify'],
-        ['match' => 'rate.?limit|throttle', 'route' => 'retry'],
-        ['match' => '404|not.found',        'route' => 'ignore'],
-    ],
-    'default_route' => 'stop',
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\ErrorHandlerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ErrorRoute;
+
+$errorHandler = $workflow->addNode(
+    ErrorHandlerNode::make()
+        ->title('Handle Errors')
+        ->rule('timeout|timed out', ErrorRoute::Retry)
+        ->rule('validation|invalid', ErrorRoute::Notify)
+        ->rule('rate.?limit|throttle', ErrorRoute::Retry)
+        ->rule('404|not.found', ErrorRoute::Ignore)
+        ->defaultRoute(ErrorRoute::Stop)
+);
 
 // Connect error ports from other nodes to this handler
 $httpNode->connect($errorHandler, 'error');

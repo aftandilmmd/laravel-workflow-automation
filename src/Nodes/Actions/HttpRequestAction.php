@@ -3,13 +3,15 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Actions;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 use Illuminate\Support\Facades\Http;
 
-#[AsWorkflowNode(key: 'http_request', type: NodeType::Action, label: 'HTTP Request')]
+#[AsWorkflowNode(key: 'http_request', type: NodeType::Action, label: 'HTTP Request', builder: HttpRequestNode::class)]
 class HttpRequestAction extends BaseNode
 {
     public static function configSchema(): array
@@ -17,7 +19,7 @@ class HttpRequestAction extends BaseNode
         return [
             ['key' => 'credential_id', 'type' => 'credential', 'label' => 'Authentication', 'required' => false, 'credential_types' => ['bearer_token', 'basic_auth', 'header_auth', 'api_key']],
             ['key' => 'url', 'type' => 'string', 'label' => 'URL', 'required' => true, 'supports_expression' => true],
-            ['key' => 'method', 'type' => 'select', 'label' => 'Method', 'required' => true, 'options' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']],
+            ['key' => 'method', 'type' => 'select', 'label' => 'Method', 'required' => true, 'options' => array_column(HttpMethod::cases(), 'value')],
             ['key' => 'headers', 'type' => 'keyvalue', 'label' => 'Headers', 'required' => false, 'supports_expression' => true],
             ['key' => 'body', 'type' => 'json', 'label' => 'Body (JSON)', 'required' => false, 'supports_expression' => true],
             ['key' => 'timeout', 'type' => 'integer', 'label' => 'Timeout (seconds)', 'required' => false],

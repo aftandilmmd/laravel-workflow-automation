@@ -50,12 +50,17 @@ $credential = WorkflowCredential::create([
 ### Reference in Node Config
 
 ```php
-$httpNode = $workflow->addNode('Call API', 'http_request', [
-    'credential_id' => $credential->id,
-    'url'           => 'https://api.stripe.com/v1/charges',
-    'method'        => 'POST',
-    'body'          => ['amount' => 2000, 'currency' => 'usd'],
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+
+$httpNode = $workflow->addNode(
+    HttpRequestNode::make()
+        ->title('Call API')
+        ->credentialId($credential->id)
+        ->url('https://api.stripe.com/v1/charges')
+        ->method(HttpMethod::Post)
+        ->body(['amount' => 2000, 'currency' => 'usd'])
+);
 ```
 
 ### Access Decrypted Data

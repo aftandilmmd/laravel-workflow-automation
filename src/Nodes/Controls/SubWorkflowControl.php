@@ -3,6 +3,7 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Controls;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\SubWorkflowNode;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Engine\GraphExecutor;
@@ -12,7 +13,7 @@ use Aftandilmmd\WorkflowAutomation\Jobs\ExecuteWorkflowJob;
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 
-#[AsWorkflowNode(key: 'sub_workflow', type: NodeType::Control, label: 'Sub Workflow')]
+#[AsWorkflowNode(key: 'sub_workflow', type: NodeType::Control, label: 'Sub Workflow', builder: SubWorkflowNode::class)]
 class SubWorkflowControl extends BaseNode
 {
     public static function configSchema(): array

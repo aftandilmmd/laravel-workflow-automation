@@ -6,6 +6,20 @@ Triggers another workflow from within the current one. Enables reusable, modular
 
 **Node key:** `sub_workflow` · **Type:** Control
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\SubWorkflowNode;
+
+SubWorkflowNode::make()
+    ->title('Run Fulfillment')
+    ->workflow($fulfillmentWorkflow)
+    ->passItems()
+    ->waitForResult();
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |
@@ -62,11 +76,15 @@ Original items are forwarded immediately (fire-and-forget).
 ## Example
 
 ```php
-$sub = $workflow->addNode('Validate Order', 'sub_workflow', [
-    'workflow_id'     => $validationWorkflow->id,
-    'pass_items'      => true,
-    'wait_for_result' => true,
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\SubWorkflowNode;
+
+$sub = $workflow->addNode(
+    SubWorkflowNode::make()
+        ->title('Validate Order')
+        ->workflowId($validationWorkflow->id)
+        ->passItems()
+        ->waitForResult()
+);
 
 // Access child output in downstream nodes:
 // {{ nodes['Validate Order'].sub_workflow_run_id }}

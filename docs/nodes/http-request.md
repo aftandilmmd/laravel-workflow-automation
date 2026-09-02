@@ -6,6 +6,23 @@ Makes an HTTP call for each item using Laravel's Http facade.
 
 **Node key:** `http_request` · **Type:** Action
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+
+HttpRequestNode::post('https://api.example.com/orders', ['order_id' => '{{ item.id }}'])
+    ->title('Push Order')
+    ->header('X-Source', 'workflow')
+    ->credential($apiCredential)
+    ->timeout(15)
+    ->includeResponse();
+
+// also: HttpRequestNode::get(), ::put(), ::patch(), ::delete()
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |
@@ -43,25 +60,35 @@ For each input item:
 Using a credential for authentication (recommended):
 
 ```php
-$apiCall = $workflow->addNode('Check Inventory', 'http_request', [
-    'credential_id'    => 1, // references a stored Bearer Token credential
-    'url'              => 'https://inventory.example.com/api/products/{{ item.product_id }}',
-    'method'           => 'GET',
-    'timeout'          => 15,
-    'include_response' => true,
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+
+$apiCall = $workflow->addNode(
+    HttpRequestNode::make()
+        ->title('Check Inventory')
+        ->credentialId(1)
+        ->url('https://inventory.example.com/api/products/{{ item.product_id }}')
+        ->method(HttpMethod::Get)
+        ->timeout(15)
+        ->includeResponse()
+);
 ```
 
 Without credentials (legacy — secrets stored in plain text):
 
 ```php
-$apiCall = $workflow->addNode('Check Inventory', 'http_request', [
-    'url'              => 'https://inventory.example.com/api/products/{{ item.product_id }}',
-    'method'           => 'GET',
-    'headers'          => ['Authorization' => 'Bearer my-api-token'],
-    'timeout'          => 15,
-    'include_response' => true,
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+
+$apiCall = $workflow->addNode(
+    HttpRequestNode::make()
+        ->title('Check Inventory')
+        ->url('https://inventory.example.com/api/products/{{ item.product_id }}')
+        ->method(HttpMethod::Get)
+        ->headers(['Authorization' => 'Bearer my-api-token'])
+        ->timeout(15)
+        ->includeResponse()
+);
 ```
 
 ## Input / Output Example

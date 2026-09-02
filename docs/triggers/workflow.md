@@ -6,6 +6,20 @@ The `workflow` trigger fires automatically when another workflow completes or fa
 
 **Node key:** `workflow`
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WorkflowTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\WorkflowTriggerOn;
+
+WorkflowTriggerNode::make()
+    ->title('After Import')
+    ->sourceWorkflow($importWorkflow)
+    ->triggerOn(WorkflowTriggerOn::Completed);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |
@@ -57,42 +71,62 @@ Workflow A completes
 Three independent workflows chained together:
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\SetFieldsNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WebhookTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WorkflowTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+use Aftandilmmd\WorkflowAutomation\Enums\WorkflowTriggerOn;
+
 // 1. Order Processing Workflow (runs first)
 $orderWf = Workflow::create(['name' => 'Process Order']);
-$orderTrigger = $orderWf->addNode('New Order', 'webhook', [
-    'method' => 'POST',
-]);
-$processOrder = $orderWf->addNode('Process', 'set_fields', [
-    'fields' => ['status' => 'processed'],
-]);
+$orderTrigger = $orderWf->addNode(
+    WebhookTriggerNode::make()
+        ->title('New Order')
+        ->method(HttpMethod::Post)
+);
+$processOrder = $orderWf->addNode(
+    SetFieldsNode::make()
+        ->title('Process')
+        ->fields(['status' => 'processed'])
+);
 $orderTrigger->connect($processOrder);
 $orderWf->activate();
 
 // 2. Shipping Workflow (triggered when order completes)
 $shippingWf = Workflow::create(['name' => 'Ship Order']);
-$shippingTrigger = $shippingWf->addNode('Order Done', 'workflow', [
-    'source_workflow_id' => $orderWf->id,
-    'trigger_on'         => 'completed',
-]);
-$ship = $shippingWf->addNode('Ship', 'http_request', [
-    'url'    => 'https://shipping-api.com/create',
-    'method' => 'POST',
-    'body'   => '{{ item.data }}',
-]);
+$shippingTrigger = $shippingWf->addNode(
+    WorkflowTriggerNode::make()
+        ->title('Order Done')
+        ->sourceWorkflowId($orderWf->id)
+        ->triggerOn(WorkflowTriggerOn::Completed)
+);
+$ship = $shippingWf->addNode(
+    HttpRequestNode::make()
+        ->title('Ship')
+        ->url('https://shipping-api.com/create')
+        ->method(HttpMethod::Post)
+        ->body('{{ item.data }}')
+);
 $shippingTrigger->connect($ship);
 $shippingWf->activate();
 
 // 3. Invoice Workflow (triggered when shipping completes)
 $invoiceWf = Workflow::create(['name' => 'Send Invoice']);
-$invoiceTrigger = $invoiceWf->addNode('Shipping Done', 'workflow', [
-    'source_workflow_id' => $shippingWf->id,
-    'trigger_on'         => 'completed',
-]);
-$invoice = $invoiceWf->addNode('Send Invoice', 'send_mail', [
-    'to'      => '{{ item.data.customer_email }}',
-    'subject' => 'Your invoice',
-    'body'    => 'Order has been shipped and invoiced.',
-]);
+$invoiceTrigger = $invoiceWf->addNode(
+    WorkflowTriggerNode::make()
+        ->title('Shipping Done')
+        ->sourceWorkflowId($shippingWf->id)
+        ->triggerOn(WorkflowTriggerOn::Completed)
+);
+$invoice = $invoiceWf->addNode(
+    SendMailNode::make()
+        ->title('Send Invoice')
+        ->to('{{ item.data.customer_email }}')
+        ->subject('Your invoice')
+        ->body('Order has been shipped and invoiced.')
+);
 $invoiceTrigger->connect($invoice);
 $invoiceWf->activate();
 ```
@@ -102,17 +136,26 @@ $invoiceWf->activate();
 A dedicated workflow that runs whenever any workflow fails:
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendNotificationNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WorkflowTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\WorkflowTriggerOn;
+
 $errorHandler = Workflow::create(['name' => 'Global Error Handler']);
 
-$trigger = $errorHandler->addNode('Any Failure', 'workflow', [
-    'source_workflow_id' => null, // listens to ALL workflows
-    'trigger_on'         => 'failed',
-]);
+$trigger = $errorHandler->addNode(
+    WorkflowTriggerNode::make()
+        ->title('Any Failure')
+        ->sourceWorkflowId(null)
+        ->triggerOn(WorkflowTriggerOn::Failed)
+);
 
-$notify = $errorHandler->addNode('Alert Team', 'send_notification', [
-    'channel' => 'slack',
-    'message' => 'Workflow {{ item.source_workflow_id }} (run {{ item.source_run_id }}) failed: {{ item.error_message }}',
-]);
+$notify = $errorHandler->addNode(
+    SendNotificationNode::make()
+        ->title('Alert Team')
+        ->notificationClass(WorkflowFailed::class)
+        ->notifiableClass(User::class)
+        ->notifiableId('{{ item.owner_id }}')
+);
 
 $trigger->connect($notify);
 $errorHandler->activate();

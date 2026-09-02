@@ -60,6 +60,14 @@ Process incoming orders with VIP detection, per-item stock updates, and branchin
 Create an artisan command to build this workflow once:
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\IfConditionNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\LoopNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+
 // app/Console/Commands/SetupOrderWorkflow.php
 
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
@@ -75,42 +83,53 @@ class SetupOrderWorkflow extends Command
         $workflow = Workflow::create(['name' => 'E-Commerce Order Processing']);
 
         // 1. Manual trigger — receives order data from the controller
-        $trigger = $workflow->addNode('New Order', 'manual');
+        $trigger = $workflow->addNode(
+            ManualTriggerNode::make()
+                ->title('New Order')
+        );
 
         // 2. Check if the order total exceeds $500
-        $vipCheck = $workflow->addNode('VIP Check', 'if_condition', [
-            'field'    => '{{ item.total }}',
-            'operator' => 'greater_than',
-            'value'    => '500',
-        ]);
+        $vipCheck = $workflow->addNode(
+            IfConditionNode::make()
+                ->title('VIP Check')
+                ->field('{{ item.total }}')
+                ->operator(ConditionOperator::GreaterThan)
+                ->value('500')
+        );
 
         // 3. Notify the VIP team for high-value orders
-        $vipEmail = $workflow->addNode('Notify VIP Team', 'send_mail', [
-            'to'      => 'vip-team@store.com',
-            'subject' => 'VIP Order #{{ item.order_id }} — ${{ item.total }}',
-            'body'    => 'Customer {{ item.customer_name }} placed a VIP order totaling ${{ item.total }}. Please prioritize fulfillment.',
-            'is_html' => false,
-        ]);
+        $vipEmail = $workflow->addNode(
+            SendMailNode::make()
+                ->title('Notify VIP Team')
+                ->to('vip-team@store.com')
+                ->subject('VIP Order #{{ item.order_id }} — ${{ item.total }}')
+                ->body('Customer {{ item.customer_name }} placed a VIP order totaling ${{ item.total }}. Please prioritize fulfillment.')
+                ->isHtml(false)
+        );
 
         // 4. Loop over each line item in the order
-        $loop = $workflow->addNode('Each Item', 'loop', [
-            'source_field' => 'items',
-        ]);
+        $loop = $workflow->addNode(
+            LoopNode::make()
+                ->title('Each Item')
+                ->sourceField('items')
+        );
 
         // 5. POST to the inventory API to reserve stock for each SKU
-        $stockUpdate = $workflow->addNode('Update Stock', 'http_request', [
-            'url'    => 'https://inventory.store.com/api/reserve',
-            'method' => 'POST',
-            'body'   => [
-                'sku'      => '{{ item._loop_item.sku }}',
-                'quantity' => '{{ item._loop_item.quantity }}',
-            ],
-            'headers' => [
-                'Authorization' => 'Bearer {{ env.INVENTORY_API_TOKEN }}',
-                'Content-Type'  => 'application/json',
-            ],
-            'timeout' => 15,
-        ]);
+        $stockUpdate = $workflow->addNode(
+            HttpRequestNode::make()
+                ->title('Update Stock')
+                ->url('https://inventory.store.com/api/reserve')
+                ->method(HttpMethod::Post)
+                ->body([
+                            'sku'      => '{{ item._loop_item.sku }}',
+                            'quantity' => '{{ item._loop_item.quantity }}',
+                        ])
+                ->headers([
+                            'Authorization' => 'Bearer {{ env.INVENTORY_API_TOKEN }}',
+                            'Content-Type'  => 'application/json',
+                        ])
+                ->timeout(15)
+        );
 
         // Wire the graph
         $trigger->connect($vipCheck);

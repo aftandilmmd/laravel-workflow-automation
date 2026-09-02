@@ -3,12 +3,14 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Triggers;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ScheduleTriggerNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\TriggerInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
+use Aftandilmmd\WorkflowAutomation\Enums\ScheduleInterval;
 
-#[AsWorkflowNode(key: 'schedule', type: NodeType::Trigger, label: 'Schedule')]
+#[AsWorkflowNode(key: 'schedule', type: NodeType::Trigger, label: 'Schedule', builder: ScheduleTriggerNode::class)]
 class ScheduleTrigger implements TriggerInterface
 {
     use \Aftandilmmd\WorkflowAutomation\Nodes\HasDocumentation;
@@ -27,7 +29,7 @@ class ScheduleTrigger implements TriggerInterface
     {
         return [
             ['key' => 'cron', 'type' => 'string', 'label' => 'Cron Expression (e.g. 0 9 * * 1)', 'required' => false],
-            ['key' => 'interval_type', 'type' => 'select', 'label' => 'Interval Type', 'options' => ['minutes', 'hours', 'days', 'custom_cron'], 'required' => true],
+            ['key' => 'interval_type', 'type' => 'select', 'label' => 'Interval Type', 'options' => array_column(ScheduleInterval::cases(), 'value'), 'required' => true],
             ['key' => 'interval_value', 'type' => 'integer', 'label' => 'Interval Value', 'required' => false],
         ];
     }

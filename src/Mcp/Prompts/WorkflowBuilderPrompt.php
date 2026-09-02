@@ -136,6 +136,10 @@ class WorkflowBuilderPrompt extends Prompt
             $ports = implode(', ', $node['output_ports']);
             $line = "  - **{$node['key']}** ({$node['label']}) — outputs: {$ports}";
 
+            if (! empty($node['builder_class'])) {
+                $line .= "\n    PHP builder: {$node['builder_class']}";
+            }
+
             // Add config schema details
             $configFields = self::formatConfigSchema($node['config_schema'] ?? []);
             if ($configFields) {

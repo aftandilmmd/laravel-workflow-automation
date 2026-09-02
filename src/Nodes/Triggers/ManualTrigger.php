@@ -3,12 +3,13 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Triggers;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\TriggerInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 
-#[AsWorkflowNode(key: 'manual', type: NodeType::Trigger, label: 'Manual Trigger')]
+#[AsWorkflowNode(key: 'manual', type: NodeType::Trigger, label: 'Manual Trigger', builder: ManualTriggerNode::class)]
 class ManualTrigger implements TriggerInterface
 {
     use \Aftandilmmd\WorkflowAutomation\Nodes\HasDocumentation;

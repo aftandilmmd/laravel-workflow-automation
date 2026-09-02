@@ -15,6 +15,17 @@ Dış API'den satış verilerini çek, eksik kayıtları filtrele, net geliri he
 Bir artisan komutu oluşturup `php artisan workflow:setup-sales-pipeline` ile bir kez çalıştırın.
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\AggregateNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\CodeNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\FilterNode;
+use Aftandilmmd\WorkflowAutomation\Enums\AggregateFunction;
+use Aftandilmmd\WorkflowAutomation\Enums\CodeMode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+use Aftandilmmd\WorkflowAutomation\Enums\FilterLogic;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+
 // app/Console/Commands/SetupSalesPipeline.php
 
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
@@ -29,39 +40,48 @@ class SetupSalesPipeline extends Command
     {
         $workflow = Workflow::create(['name' => 'Sales Pipeline']);
 
-        $trigger = $workflow->addNode('Start', 'manual');
+        $trigger = $workflow->addNode(
+            ManualTriggerNode::make()
+                ->title('Start')
+        );
 
-        $fetchData = $workflow->addNode('Fetch Sales', 'http_request', [
-            'url'    => 'https://sales-api.example.com/transactions?date={{ payload.date }}',
-            'method' => 'GET',
-        ]);
+        $fetchData = $workflow->addNode(
+            HttpRequestNode::make()
+                ->title('Fetch Sales')
+                ->url('https://sales-api.example.com/transactions?date={{ payload.date }}')
+                ->method(HttpMethod::Get)
+        );
 
-        $filterCompleted = $workflow->addNode('Completed Only', 'filter', [
-            'conditions' => [
-                ['field' => 'status', 'operator' => 'equals', 'value' => 'completed'],
-                ['field' => 'amount', 'operator' => 'greater_than', 'value' => 0],
-            ],
-            'logic' => 'and',
-        ]);
+        $filterCompleted = $workflow->addNode(
+            FilterNode::make()
+                ->title('Completed Only')
+                ->condition('status', ConditionOperator::Equals, 'completed')
+                ->condition('amount', ConditionOperator::GreaterThan, 0)
+                ->logic(FilterLogic::And)
+        );
 
-        $calcRevenue = $workflow->addNode('Net Revenue', 'code', [
-            'mode'       => 'transform',
-            'expression' => '{{ item.amount * (1 - item.discount / 100) }}',
-        ]);
+        $calcRevenue = $workflow->addNode(
+            CodeNode::make()
+                ->title('Net Revenue')
+                ->mode(CodeMode::Transform)
+                ->expression('{{ item.amount * (1 - item.discount / 100) }}')
+        );
 
-        $aggregate = $workflow->addNode('By Region', 'aggregate', [
-            'group_by'   => 'region',
-            'operations' => [
-                ['field' => '_result', 'function' => 'sum',   'alias' => 'total_revenue'],
-                ['field' => '_result', 'function' => 'count', 'alias' => 'transaction_count'],
-            ],
-        ]);
+        $aggregate = $workflow->addNode(
+            AggregateNode::make()
+                ->title('By Region')
+                ->groupBy('region')
+                ->operation('_result', AggregateFunction::Sum, 'total_revenue')
+                ->operation('_result', AggregateFunction::Count, 'transaction_count')
+        );
 
-        $pushReport = $workflow->addNode('Push Report', 'http_request', [
-            'url'    => 'https://reports.example.com/ingest',
-            'method' => 'POST',
-            'body'   => ['report_type' => 'daily_sales', 'date' => '{{ payload.date }}'],
-        ]);
+        $pushReport = $workflow->addNode(
+            HttpRequestNode::make()
+                ->title('Push Report')
+                ->url('https://reports.example.com/ingest')
+                ->method(HttpMethod::Post)
+                ->body(['report_type' => 'daily_sales', 'date' => '{{ payload.date }}'])
+        );
 
         // Edge'ler — düz bir pipeline
         $trigger->connect($fetchData);

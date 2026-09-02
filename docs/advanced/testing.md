@@ -94,6 +94,11 @@ Notification::assertSentTo($user, MyNotification::class);
 ## Testing the Full Lifecycle
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\IfConditionNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+
 use Aftandilmmd\WorkflowAutomation\Models\Workflow;
 
 class OrderWorkflowTest extends TestCase
@@ -109,13 +114,24 @@ class OrderWorkflowTest extends TestCase
         // Build the workflow
         $this->workflow = Workflow::create(['name' => 'Test Order']);
 
-        $trigger = $this->workflow->addNode('Start', 'manual');
-        $check   = $this->workflow->addNode('High Value?', 'if_condition', [
-            'field' => 'total', 'operator' => 'greater_than', 'value' => 500,
-        ]);
-        $email   = $this->workflow->addNode('VIP Email', 'send_mail', [
-            'to' => '{{ item.email }}', 'subject' => 'VIP!', 'body' => 'Welcome VIP.',
-        ]);
+        $trigger = $this->workflow->addNode(
+            ManualTriggerNode::make()
+                ->title('Start')
+        );
+        $check   = $this->workflow->addNode(
+            IfConditionNode::make()
+                ->title('High Value?')
+                ->field('total')
+                ->operator(ConditionOperator::GreaterThan)
+                ->value(500)
+        );
+        $email   = $this->workflow->addNode(
+            SendMailNode::make()
+                ->title('VIP Email')
+                ->to('{{ item.email }}')
+                ->subject('VIP!')
+                ->body('Welcome VIP.')
+        );
 
         $trigger->connect($check);
         $check->connect($email, sourcePort: 'true');
@@ -245,9 +261,17 @@ $this->assertEmpty($errors);
 Or for expected errors:
 
 ```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+
 // Workflow with no trigger
 $workflow = Workflow::create(['name' => 'Invalid']);
-$workflow->addNode('Email', 'send_mail', ['to' => 'a@b.com', 'subject' => 'Test', 'body' => 'Test']);
+$workflow->addNode(
+    SendMailNode::make()
+        ->title('Email')
+        ->to('a@b.com')
+        ->subject('Test')
+        ->body('Test')
+);
 
 $errors = $workflow->validateGraph();
 

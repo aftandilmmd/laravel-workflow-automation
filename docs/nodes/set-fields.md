@@ -4,6 +4,20 @@ Merges new or overwritten fields into each item. A lightweight data transformer.
 
 **Node key:** `set_fields` · **Type:** Transformer
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\SetFieldsNode;
+
+SetFieldsNode::make()
+    ->title('Normalize')
+    ->fields(['full_name' => '{{ item.first_name }} {{ item.last_name }}'])
+    ->field('source', 'workflow')
+    ->keepExisting();
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |
@@ -27,14 +41,18 @@ Merges new or overwritten fields into each item. A lightweight data transformer.
 ## Example
 
 ```php
-$setFields = $workflow->addNode('Normalize', 'set_fields', [
-    'fields' => [
-        'processed_at' => '{{ now() }}',
-        'email'        => '{{ lower(item.email) }}',
-        'full_name'    => '{{ item.first_name + " " + item.last_name }}',
-    ],
-    'keep_existing' => true,
-]);
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\SetFieldsNode;
+
+$setFields = $workflow->addNode(
+    SetFieldsNode::make()
+        ->title('Normalize')
+        ->fields([
+            'processed_at' => '{{ now() }}',
+            'email'        => '{{ lower(item.email) }}',
+            'full_name'    => '{{ item.first_name + " " + item.last_name }}',
+        ])
+        ->keepExisting()
+);
 ```
 
 ## Input / Output Example

@@ -3,15 +3,17 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Controls;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\DelayNode;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
+use Aftandilmmd\WorkflowAutomation\Enums\DelayUnit;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Enums\RunStatus;
 use Aftandilmmd\WorkflowAutomation\Jobs\ResumeWorkflowJob;
 use Aftandilmmd\WorkflowAutomation\Models\WorkflowRun;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 
-#[AsWorkflowNode(key: 'delay', type: NodeType::Control, label: 'Delay')]
+#[AsWorkflowNode(key: 'delay', type: NodeType::Control, label: 'Delay', builder: DelayNode::class)]
 class DelayControl extends BaseNode
 {
     public function outputPorts(): array
@@ -22,7 +24,7 @@ class DelayControl extends BaseNode
     public static function configSchema(): array
     {
         return [
-            ['key' => 'delay_type', 'type' => 'select', 'label' => 'Delay Type', 'options' => ['seconds', 'minutes', 'hours'], 'required' => true],
+            ['key' => 'delay_type', 'type' => 'select', 'label' => 'Delay Type', 'options' => array_column(DelayUnit::cases(), 'value'), 'required' => true],
             ['key' => 'delay_value', 'type' => 'integer', 'label' => 'Delay Value', 'required' => true],
         ];
     }

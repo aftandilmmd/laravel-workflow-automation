@@ -3,12 +3,14 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Controls;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\ErrorHandlerNode;
 use Aftandilmmd\WorkflowAutomation\Contracts\NodeInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
+use Aftandilmmd\WorkflowAutomation\Enums\ErrorRoute;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 
-#[AsWorkflowNode(key: 'error_handler', type: NodeType::Control, label: 'Error Handler')]
+#[AsWorkflowNode(key: 'error_handler', type: NodeType::Control, label: 'Error Handler', builder: ErrorHandlerNode::class)]
 class ErrorHandlerControl implements NodeInterface
 {
     use \Aftandilmmd\WorkflowAutomation\Nodes\HasDocumentation;
@@ -28,9 +30,9 @@ class ErrorHandlerControl implements NodeInterface
         return [
             ['key' => 'rules', 'type' => 'array_of_objects', 'label' => 'Routing Rules', 'required' => true, 'schema' => [
                 ['key' => 'match', 'type' => 'string', 'label' => 'Error message pattern (regex)'],
-                ['key' => 'route', 'type' => 'select', 'label' => 'Route to port', 'options' => ['notify', 'retry', 'ignore', 'stop']],
+                ['key' => 'route', 'type' => 'select', 'label' => 'Route to port', 'options' => array_column(ErrorRoute::cases(), 'value')],
             ]],
-            ['key' => 'default_route', 'type' => 'select', 'label' => 'Default route (no match)', 'options' => ['notify', 'retry', 'ignore', 'stop'], 'required' => false],
+            ['key' => 'default_route', 'type' => 'select', 'label' => 'Default route (no match)', 'options' => array_column(ErrorRoute::cases(), 'value'), 'required' => false],
         ];
     }
 
