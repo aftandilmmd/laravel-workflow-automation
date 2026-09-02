@@ -5,6 +5,19 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-09-02
+
+### Removed
+
+- Laravel 10 and 11 support. Both are end of life, and Composer refuses to install any
+  Laravel 11 release because of unpatched security advisories. Requires Laravel 12 or 13.
+  Stay on `v0.2.x` if you cannot upgrade yet.
+
+### Changed
+
+- Dev requirements: `orchestra/testbench` `^10.0|^11.0`, `pestphp/pest` `^3.0`.
+- CI matrix tests Laravel 12 and 13 on PHP 8.3 and 8.4.
+
 ## [0.2.0] - 2026-09-02
 
 ### Added
@@ -37,4 +50,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adding nodes with a node key and config array. It still works, but the builder API is the
   recommended path and the array form will likely be removed in a future release.
 
+[0.3.0]: https://github.com/aftandilmmd/laravel-workflow-automation/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/aftandilmmd/laravel-workflow-automation/compare/v0.1.8...v0.2.0

@@ -149,7 +149,7 @@ Detaylı rehberler, node referansları, örnekler ve tarifler:
 ## Gereksinimler
 
 - PHP 8.3+
-- Laravel 10, 11, 12 veya 13
+- Laravel 12 veya 13
 - `illuminate/*` dışında bağımlılık yok
 
 ## Test
