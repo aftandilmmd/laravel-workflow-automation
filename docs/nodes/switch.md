@@ -4,6 +4,22 @@ Routes each item to a named output port based on the first matching case. Multi-
 
 **Node key:** `switch` · **Type:** Condition
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\SwitchNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+
+SwitchNode::make()
+    ->title('Route by Plan')
+    ->field('{{ item.plan }}')
+    ->case('case_premium', ConditionOperator::Equals, 'premium')
+    ->case('case_pro', ConditionOperator::Equals, 'pro')
+    ->fallthrough();
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

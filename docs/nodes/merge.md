@@ -4,6 +4,19 @@ Collects items from multiple input ports and combines them into a single stream.
 
 **Node key:** `merge` · **Type:** Control
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\MergeNode;
+use Aftandilmmd\WorkflowAutomation\Enums\MergeMode;
+
+MergeNode::make()
+    ->title('Combine Branches')
+    ->mode(MergeMode::WaitAll);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

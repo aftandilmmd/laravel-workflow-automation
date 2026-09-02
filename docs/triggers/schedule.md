@@ -6,6 +6,23 @@ The `schedule` trigger runs a workflow automatically on a time-based schedule us
 
 **Node key:** `schedule`
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ScheduleTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ScheduleInterval;
+
+ScheduleTriggerNode::make()
+    ->title('Every 6 Hours')
+    ->intervalType(ScheduleInterval::Hours)
+    ->intervalValue(6);
+
+ScheduleTriggerNode::every(6, ScheduleInterval::Hours);   // same thing
+ScheduleTriggerNode::make()->cron('0 9 * * 1');           // switches to cron mode
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

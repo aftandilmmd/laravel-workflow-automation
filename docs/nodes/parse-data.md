@@ -6,6 +6,21 @@ Parses raw data from a field (JSON, CSV, or query string) into structured data.
 
 **Node key:** `parse_data` · **Type:** Transformer
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\ParseDataNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ParseFormat;
+
+ParseDataNode::make()
+    ->title('Parse Webhook Body')
+    ->sourceField('{{ item.raw_body }}')
+    ->format(ParseFormat::Json)
+    ->targetField('payload');
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

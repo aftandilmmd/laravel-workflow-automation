@@ -6,6 +6,23 @@ Executes artisan commands or shell commands from within a workflow. Supports all
 
 **Node key:** `run_command` · **Type:** Action
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\RunCommandNode;
+
+RunCommandNode::artisan('reports:generate')
+    ->title('Nightly Report')
+    ->argument('--date', '{{ item.date }}')
+    ->timeout(120)
+    ->includeOutput();
+
+RunCommandNode::shell('rsync -a ./storage /backup')
+    ->workingDirectory('/var/www/app');
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

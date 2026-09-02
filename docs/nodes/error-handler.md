@@ -4,6 +4,21 @@ Routes error items to different ports based on regex pattern matching against th
 
 **Node key:** `error_handler` · **Type:** Control
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\ErrorHandlerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ErrorRoute;
+
+ErrorHandlerNode::make()
+    ->title('Classify Failures')
+    ->rule('/timeout|timed out/i', ErrorRoute::Retry)
+    ->rule('/validation/i', ErrorRoute::Ignore)
+    ->defaultRoute(ErrorRoute::Notify);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

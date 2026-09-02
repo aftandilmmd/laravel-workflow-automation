@@ -4,6 +4,21 @@ Dispatches a Laravel queued job for each item.
 
 **Node key:** `dispatch_job` · **Type:** Action
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\DispatchJobNode;
+
+DispatchJobNode::make()
+    ->title('Generate Invoice')
+    ->jobClass(GenerateInvoice::class)
+    ->queue('invoices')
+    ->delay(30)
+    ->withItem();
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

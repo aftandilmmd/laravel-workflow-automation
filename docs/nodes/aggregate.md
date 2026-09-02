@@ -4,6 +4,21 @@ Groups items and applies aggregate functions (sum, count, avg, min, max). Produc
 
 **Node key:** `aggregate` · **Type:** Utility
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\AggregateNode;
+use Aftandilmmd\WorkflowAutomation\Enums\AggregateFunction;
+
+AggregateNode::make()
+    ->title('Revenue by Country')
+    ->groupBy('country')
+    ->operation('total', AggregateFunction::Sum, 'revenue')
+    ->operation('id', AggregateFunction::Count, 'orders');
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

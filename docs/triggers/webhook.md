@@ -4,6 +4,22 @@ The `webhook` trigger starts a workflow when an external service sends an HTTP r
 
 **Node key:** `webhook`
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WebhookTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\HttpMethod;
+use Aftandilmmd\WorkflowAutomation\Enums\WebhookAuthType;
+
+WebhookTriggerNode::make()
+    ->title('Stripe Webhook')
+    ->method(HttpMethod::Post)
+    ->authType(WebhookAuthType::Bearer)
+    ->credential($stripeCredential);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

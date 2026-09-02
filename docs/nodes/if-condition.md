@@ -6,6 +6,23 @@ Evaluates each item against a condition and routes it to either the `true` or `f
 
 **Node key:** `if_condition` · **Type:** Condition
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Conditions\IfConditionNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
+
+IfConditionNode::make()
+    ->title('VIP Check')
+    ->field('{{ item.total }}')
+    ->operator(ConditionOperator::GreaterThan)
+    ->value(500);
+
+IfConditionNode::when('{{ item.total }}', ConditionOperator::GreaterThan, 500);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

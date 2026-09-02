@@ -6,6 +6,21 @@ Evaluates custom expressions against each item. Inline transformations and filte
 
 **Node key:** `code` · **Type:** Code
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Utilities\CodeNode;
+use Aftandilmmd\WorkflowAutomation\Enums\CodeMode;
+
+CodeNode::transform('{{ item.total - item.cost }}')->title('Compute Margin');
+
+CodeNode::make()
+    ->mode(CodeMode::Filter)
+    ->expression('{{ item.total > 100 }}');
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

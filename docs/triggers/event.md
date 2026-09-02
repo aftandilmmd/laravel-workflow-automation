@@ -6,6 +6,18 @@ The `event` trigger fires automatically when a Laravel event is dispatched. Unli
 
 **Node key:** `event`
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\EventTriggerNode;
+
+EventTriggerNode::make()
+    ->title('Order Placed')
+    ->eventClass(OrderPlaced::class);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

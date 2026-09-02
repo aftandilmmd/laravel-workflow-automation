@@ -6,6 +6,23 @@ Makes an HTTP call for each item using Laravel's Http facade.
 
 **Node key:** `http_request` · **Type:** Action
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\HttpRequestNode;
+
+HttpRequestNode::post('https://api.example.com/orders', ['order_id' => '{{ item.id }}'])
+    ->title('Push Order')
+    ->header('X-Source', 'workflow')
+    ->credential($apiCredential)
+    ->timeout(15)
+    ->includeResponse();
+
+// also: HttpRequestNode::get(), ::put(), ::patch(), ::delete()
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

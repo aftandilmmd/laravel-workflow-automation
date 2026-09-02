@@ -4,6 +4,21 @@ Pauses a workflow run for a specified duration before continuing. Uses Laravel's
 
 **Node key:** `delay` · **Type:** Control
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\DelayNode;
+use Aftandilmmd\WorkflowAutomation\Enums\DelayUnit;
+
+DelayNode::minutes(15)->title('Cooldown');   // also ::seconds(), ::hours()
+
+DelayNode::make()
+    ->delayType(DelayUnit::Hours)
+    ->delayValue(2);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

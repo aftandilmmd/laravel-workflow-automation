@@ -6,6 +6,25 @@ Send prompts to any AI provider from within a workflow using [Laravel AI](https:
 
 **Node key:** `ai` · **Type:** Action
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\AiNode;
+use Aftandilmmd\WorkflowAutomation\Enums\AiProvider;
+
+AiNode::make()
+    ->title('Classify Ticket')
+    ->prompt('Classify this ticket: {{ item.body }}')
+    ->systemPrompt('Answer with one word.')
+    ->provider(AiProvider::Anthropic)
+    ->model('claude-sonnet-4-5-20250514')
+    ->temperature(0.2)
+    ->maxTokens(200)
+    ->outputKey('category');
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ::: tip Prerequisite
 This node requires the `laravel/ai` package. Install it with:
 ```bash

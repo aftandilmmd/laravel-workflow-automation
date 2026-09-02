@@ -6,6 +6,20 @@ The `workflow` trigger fires automatically when another workflow completes or fa
 
 **Node key:** `workflow`
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\WorkflowTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\WorkflowTriggerOn;
+
+WorkflowTriggerNode::make()
+    ->title('After Import')
+    ->sourceWorkflow($importWorkflow)
+    ->triggerOn(WorkflowTriggerOn::Completed);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

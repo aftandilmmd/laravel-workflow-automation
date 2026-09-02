@@ -6,6 +6,18 @@ Expands an array field within each item into individual items for per-element pr
 
 **Node key:** `loop` · **Type:** Control
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\LoopNode;
+
+LoopNode::make()
+    ->title('Each Order Line')
+    ->sourceField('{{ item.lines }}');
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

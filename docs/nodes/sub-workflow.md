@@ -6,6 +6,20 @@ Triggers another workflow from within the current one. Enables reusable, modular
 
 **Node key:** `sub_workflow` · **Type:** Control
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\SubWorkflowNode;
+
+SubWorkflowNode::make()
+    ->title('Run Fulfillment')
+    ->workflow($fulfillmentWorkflow)
+    ->passItems()
+    ->waitForResult();
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

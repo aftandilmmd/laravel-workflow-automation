@@ -4,6 +4,18 @@ Pauses a workflow and waits for an external signal before continuing. Enables hu
 
 **Node key:** `wait_resume` · **Type:** Control
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Controls\WaitResumeNode;
+
+WaitResumeNode::make()
+    ->title('Await Approval')
+    ->timeoutSeconds(86400);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

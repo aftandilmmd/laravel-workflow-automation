@@ -4,6 +4,28 @@ Sends an email for each item passing through it using Laravel's Mail facade.
 
 **Node key:** `send_mail` · **Type:** Action
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
+
+// inline mode is selected by the fields you use
+SendMailNode::make()
+    ->title('Welcome Email')
+    ->to('{{ item.email }}')
+    ->subject('Welcome, {{ item.name }}!')
+    ->body('Thanks for signing up.')
+    ->isHtml()
+    ->attachment('invoice.pdf', '{{ item.invoice_path }}');
+
+// mailable mode
+SendMailNode::make()
+    ->mailableClass(WelcomeMail::class)
+    ->mailableTo('{{ item.email }}');
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Send Modes
 
 The node supports two modes via the `send_mode` config:

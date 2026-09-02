@@ -4,6 +4,21 @@ The `model_event` trigger fires automatically when an Eloquent model event occur
 
 **Node key:** `model_event`
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ModelEventTriggerNode;
+use Aftandilmmd\WorkflowAutomation\Enums\ModelEvent;
+
+ModelEventTriggerNode::make()
+    ->title('User Created')
+    ->model(User::class)
+    ->events([ModelEvent::Created, ModelEvent::Updated])
+    ->onlyFields(['email', 'status']);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

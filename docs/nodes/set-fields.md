@@ -4,6 +4,20 @@ Merges new or overwritten fields into each item. A lightweight data transformer.
 
 **Node key:** `set_fields` · **Type:** Transformer
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Transformers\SetFieldsNode;
+
+SetFieldsNode::make()
+    ->title('Normalize')
+    ->fields(['full_name' => '{{ item.first_name }} {{ item.last_name }}'])
+    ->field('source', 'workflow')
+    ->keepExisting();
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |

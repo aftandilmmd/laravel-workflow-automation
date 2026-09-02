@@ -4,6 +4,18 @@ The `manual` trigger starts a workflow when you explicitly call `$workflow->star
 
 **Node key:** `manual`
 
+## PHP Builder
+
+```php
+use Aftandilmmd\WorkflowAutomation\Builders\Triggers\ManualTriggerNode;
+
+ManualTriggerNode::make()
+    ->title('Manual Start')
+    ->inputSchema(['email' => 'string', 'name' => 'string']);
+```
+
+See [Node Builders](../api/node-builders.md) for the conventions shared by all builders.
+
 ## Config
 
 | Key | Type | Required | Expression | Description |
