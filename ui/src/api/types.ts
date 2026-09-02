@@ -106,6 +106,7 @@ export interface RegistryNode {
   config_schema: ConfigSchemaField[]
   output_schema: Record<string, OutputSchemaField[]>
   documentation: string | null
+  builder_class?: string | null
 }
 
 export interface OutputSchemaField {

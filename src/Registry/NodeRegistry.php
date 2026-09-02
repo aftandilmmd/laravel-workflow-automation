@@ -28,9 +28,10 @@ class NodeRegistry
         $attribute = $this->readAttribute($class);
 
         $this->nodes[$key] = [
-            'class' => $class,
-            'label' => $attribute?->label ?? $key,
-            'type'  => $attribute?->type ?? NodeType::Action,
+            'class'   => $class,
+            'label'   => $attribute?->label ?? $key,
+            'type'    => $attribute?->type ?? NodeType::Action,
+            'builder' => $attribute?->builder,
         ];
     }
 
@@ -54,9 +55,10 @@ class NodeRegistry
         }
 
         $this->nodes[$attribute->key] = [
-            'class' => $class,
-            'label' => $attribute->label ?: $attribute->key,
-            'type'  => $attribute->type,
+            'class'   => $class,
+            'label'   => $attribute->label ?: $attribute->key,
+            'type'    => $attribute->type,
+            'builder' => $attribute->builder,
         ];
     }
 
@@ -84,9 +86,10 @@ class NodeRegistry
             }
 
             $this->nodes[$attribute->key] = [
-                'class' => $class,
-                'label' => $attribute->label ?: $attribute->key,
-                'type'  => $attribute->type,
+                'class'   => $class,
+                'label'   => $attribute->label ?: $attribute->key,
+                'type'    => $attribute->type,
+                'builder' => $attribute->builder,
             ];
         }
     }
@@ -124,6 +127,7 @@ class NodeRegistry
                 'config_schema'  => $meta['class']::configSchema(),
                 'output_schema'  => $meta['class']::outputSchema(),
                 'documentation'  => method_exists($meta['class'], 'documentation') ? $meta['class']::documentation() : null,
+                'builder_class'  => $meta['builder'] ?? null,
             ];
         }
 
@@ -146,11 +150,21 @@ class NodeRegistry
     /**
      * Get the metadata for a single node key.
      *
-     * @return array{class: class-string<NodeInterface>, label: string, type: NodeType}|null
+     * @return array{class: class-string<NodeInterface>, label: string, type: NodeType, builder: ?string}|null
      */
     public function getMeta(string $key): ?array
     {
         return $this->nodes[$key] ?? null;
+    }
+
+    /**
+     * The builder class registered for a node key, if any.
+     *
+     * @return class-string<\Aftandilmmd\WorkflowAutomation\Builders\NodeDefinition>|null
+     */
+    public function builderFor(string $key): ?string
+    {
+        return $this->nodes[$key]['builder'] ?? null;
     }
 
     private function readAttribute(string $class): ?AsWorkflowNode
