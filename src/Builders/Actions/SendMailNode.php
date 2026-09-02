@@ -74,7 +74,7 @@ class SendMailNode extends NodeDefinition
 
     public function attachment(string $name, string $path): static
     {
-        return $this->inline()->put('attachments', $name, $path);
+        return $this->inline()->putEntry('attachments', $name, $path);
     }
 
     /**

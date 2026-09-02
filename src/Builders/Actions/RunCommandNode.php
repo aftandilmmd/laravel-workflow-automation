@@ -42,7 +42,7 @@ class RunCommandNode extends NodeDefinition
 
     public function argument(string $name, string $value): static
     {
-        return $this->put('arguments', $name, $value);
+        return $this->putEntry('arguments', $name, $value);
     }
 
     public function timeout(int $seconds): static

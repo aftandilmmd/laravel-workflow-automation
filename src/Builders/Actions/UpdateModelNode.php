@@ -39,6 +39,6 @@ class UpdateModelNode extends NodeDefinition
 
     public function field(string $name, mixed $value): static
     {
-        return $this->put('fields', $name, $value);
+        return $this->putEntry('fields', $name, $value);
     }
 }

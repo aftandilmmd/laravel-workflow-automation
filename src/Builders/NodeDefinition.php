@@ -164,7 +164,7 @@ abstract class NodeDefinition
     /**
      * Merge a single pair into a key/value config key.
      */
-    protected function put(string $key, string|int $entryKey, mixed $value): static
+    protected function putEntry(string $key, string|int $entryKey, mixed $value): static
     {
         $existing = $this->config[$key] ?? [];
         $existing[$entryKey] = $this->normalize($value);

@@ -73,7 +73,7 @@ class HttpRequestNode extends NodeDefinition
 
     public function header(string $name, string $value): static
     {
-        return $this->put('headers', $name, $value);
+        return $this->putEntry('headers', $name, $value);
     }
 
     /**
