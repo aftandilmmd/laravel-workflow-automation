@@ -2,6 +2,9 @@
 
 namespace Aftandilmmd\WorkflowAutomation\Enums;
 
+/**
+ * @deprecated Use ConditionOperator instead. Kept for backward compatibility; values are identical.
+ */
 enum Operator: string
 {
     case Equals         = 'equals';
@@ -19,19 +22,6 @@ enum Operator: string
 
     public function evaluate(mixed $fieldValue, mixed $compareValue = null): bool
     {
-        return match ($this) {
-            self::Equals         => $fieldValue == $compareValue,
-            self::NotEquals      => $fieldValue != $compareValue,
-            self::Contains       => str_contains((string) $fieldValue, (string) $compareValue),
-            self::NotContains    => ! str_contains((string) $fieldValue, (string) $compareValue),
-            self::GreaterThan    => $fieldValue > $compareValue,
-            self::LessThan       => $fieldValue < $compareValue,
-            self::GreaterOrEqual => $fieldValue >= $compareValue,
-            self::LessOrEqual    => $fieldValue <= $compareValue,
-            self::IsEmpty        => empty($fieldValue),
-            self::IsNotEmpty     => ! empty($fieldValue),
-            self::StartsWith     => str_starts_with((string) $fieldValue, (string) $compareValue),
-            self::EndsWith       => str_ends_with((string) $fieldValue, (string) $compareValue),
-        };
+        return ConditionOperator::from($this->value)->evaluate($fieldValue, $compareValue);
     }
 }

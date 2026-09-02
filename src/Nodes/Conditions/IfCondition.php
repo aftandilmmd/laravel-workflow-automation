@@ -7,7 +7,7 @@ use Aftandilmmd\WorkflowAutomation\Contracts\NodeInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
-use Aftandilmmd\WorkflowAutomation\Enums\Operator;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
 
 #[AsWorkflowNode(key: 'if_condition', type: NodeType::Condition, label: 'IF Condition')]
 class IfCondition implements NodeInterface
@@ -28,7 +28,7 @@ class IfCondition implements NodeInterface
     {
         return [
             ['key' => 'field', 'type' => 'string', 'label' => 'Field', 'required' => true, 'supports_expression' => true],
-            ['key' => 'operator', 'type' => 'select', 'label' => 'Operator', 'required' => true, 'options' => array_column(Operator::cases(), 'value')],
+            ['key' => 'operator', 'type' => 'select', 'label' => 'Operator', 'required' => true, 'options' => array_column(ConditionOperator::cases(), 'value')],
             ['key' => 'value', 'type' => 'string', 'label' => 'Value', 'required' => false, 'supports_expression' => true],
         ];
     }
@@ -45,7 +45,7 @@ class IfCondition implements NodeInterface
     {
         $trueItems = [];
         $falseItems = [];
-        $operator = Operator::from($config['operator']);
+        $operator = ConditionOperator::from($config['operator']);
 
         foreach ($input->items as $item) {
             $fieldValue = data_get($item, $config['field']);

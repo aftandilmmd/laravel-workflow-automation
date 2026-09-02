@@ -7,7 +7,7 @@ use Aftandilmmd\WorkflowAutomation\Contracts\NodeInterface;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
-use Aftandilmmd\WorkflowAutomation\Enums\Operator;
+use Aftandilmmd\WorkflowAutomation\Enums\ConditionOperator;
 
 #[AsWorkflowNode(key: 'switch', type: NodeType::Condition, label: 'Switch')]
 class SwitchCondition implements NodeInterface
@@ -30,7 +30,7 @@ class SwitchCondition implements NodeInterface
             ['key' => 'field', 'type' => 'string', 'label' => 'Field to check', 'required' => true, 'supports_expression' => true],
             ['key' => 'cases', 'type' => 'array_of_objects', 'label' => 'Cases', 'required' => true, 'schema' => [
                 ['key' => 'port', 'type' => 'string', 'label' => 'Port Name (e.g. case_premium)'],
-                ['key' => 'operator', 'type' => 'select', 'label' => 'Operator', 'options' => array_column(Operator::cases(), 'value')],
+                ['key' => 'operator', 'type' => 'select', 'label' => 'Operator', 'options' => array_column(ConditionOperator::cases(), 'value')],
                 ['key' => 'value', 'type' => 'string', 'label' => 'Value'],
             ]],
             ['key' => 'fallthrough', 'type' => 'boolean', 'label' => 'Route unmatched to "default" port', 'required' => false],
@@ -52,7 +52,7 @@ class SwitchCondition implements NodeInterface
             $matched = false;
 
             foreach ($cases as $case) {
-                if (Operator::from($case['operator'])->evaluate($fieldValue, $case['value'])) {
+                if (ConditionOperator::from($case['operator'])->evaluate($fieldValue, $case['value'])) {
                     $portItems[$case['port']][] = $item;
                     $matched = true;
 
