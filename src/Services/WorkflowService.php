@@ -2,6 +2,7 @@
 
 namespace Aftandilmmd\WorkflowAutomation\Services;
 
+use Aftandilmmd\WorkflowAutomation\Builders\NodeDefinition;
 use Aftandilmmd\WorkflowAutomation\Engine\GraphExecutor;
 use Aftandilmmd\WorkflowAutomation\Engine\GraphValidator;
 use Aftandilmmd\WorkflowAutomation\Enums\CreatedVia;
@@ -258,11 +259,17 @@ class WorkflowService
 
     public function addNode(
         int|Workflow $workflow,
-        string $nodeKey,
+        string|NodeDefinition $nodeKey,
         array $config = [],
         ?string $name = null,
     ): WorkflowNode {
         $workflow = $this->resolveWorkflow($workflow);
+
+        if ($nodeKey instanceof NodeDefinition) {
+            $nodeKey->validate();
+
+            return $workflow->nodes()->create($nodeKey->toArray());
+        }
 
         return $workflow->nodes()->create([
             'type'     => app(\Aftandilmmd\WorkflowAutomation\Registry\NodeRegistry::class)->getMeta($nodeKey)['type'] ?? NodeType::Action,

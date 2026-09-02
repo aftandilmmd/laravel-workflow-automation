@@ -2,6 +2,7 @@
 
 namespace Aftandilmmd\WorkflowAutomation\Models;
 
+use Aftandilmmd\WorkflowAutomation\Builders\NodeDefinition;
 use Aftandilmmd\WorkflowAutomation\Database\Factories\WorkflowFactory;
 use Aftandilmmd\WorkflowAutomation\Enums\CreatedVia;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
@@ -88,9 +89,33 @@ class Workflow extends Model
 
     // ── Fluent API ──────────────────────────────────────────────
 
-    public function addNode(string $name, string $nodeKey, array $config = []): WorkflowNode
+    /**
+     * Add a node, either from a builder definition or from a node key and config array.
+     *
+     * $workflow->addNode(SendMailNode::make()->to('...')->subject('...')->body('...'));
+     * $workflow->addNode('Welcome', 'send_mail', ['to' => '...']);
+     */
+    public function addNode(string|NodeDefinition $name, ?string $nodeKey = null, array $config = []): WorkflowNode
     {
+        if ($name instanceof NodeDefinition) {
+            return $this->service()->addNode($this, $name);
+        }
+
+        if ($nodeKey === null) {
+            throw new \InvalidArgumentException('A node key is required when adding a node by name.');
+        }
+
         return $this->service()->addNode($this, $nodeKey, $config, $name);
+    }
+
+    /**
+     * Add several nodes at once, in order.
+     *
+     * @return array<int, WorkflowNode>
+     */
+    public function addNodes(NodeDefinition ...$definitions): array
+    {
+        return array_map(fn (NodeDefinition $definition) => $this->addNode($definition), $definitions);
     }
 
     public function connect(
