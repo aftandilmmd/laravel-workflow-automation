@@ -3,6 +3,7 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Actions;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\RunCommandNode;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\CommandType;
@@ -11,7 +12,7 @@ use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 use Illuminate\Support\Facades\Artisan;
 use Symfony\Component\Process\Process;
 
-#[AsWorkflowNode(key: 'run_command', type: NodeType::Action, label: 'Run Command')]
+#[AsWorkflowNode(key: 'run_command', type: NodeType::Action, label: 'Run Command', builder: RunCommandNode::class)]
 class RunCommandAction extends BaseNode
 {
     public static function configSchema(): array

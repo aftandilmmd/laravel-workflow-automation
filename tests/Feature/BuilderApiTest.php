@@ -1,5 +1,6 @@
 <?php
 
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
 use Aftandilmmd\WorkflowAutomation\Builders\GenericNode;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Exceptions\InvalidNodeConfigException;
@@ -97,10 +98,9 @@ it('requires a node key with the array syntax', function () {
 it('exposes the builder class through the registry', function () {
     $registry = app(NodeRegistry::class);
 
-    expect($registry->builderFor('send_mail'))->toBeNull()
-        ->and($registry->getMeta('send_mail'))->toHaveKey('builder');
+    expect($registry->builderFor('send_mail'))->toBe(SendMailNode::class);
 
     $sendMail = collect($registry->all())->firstWhere('key', 'send_mail');
 
-    expect($sendMail)->toHaveKey('builder_class');
+    expect($sendMail['builder_class'])->toBe(SendMailNode::class);
 });

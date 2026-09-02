@@ -3,12 +3,13 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Actions;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendNotificationNode;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 
-#[AsWorkflowNode(key: 'send_notification', type: NodeType::Action, label: 'Send Notification')]
+#[AsWorkflowNode(key: 'send_notification', type: NodeType::Action, label: 'Send Notification', builder: SendNotificationNode::class)]
 class SendNotificationAction extends BaseNode
 {
     public static function configSchema(): array

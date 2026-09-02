@@ -3,6 +3,7 @@
 namespace Aftandilmmd\WorkflowAutomation\Nodes\Actions;
 
 use Aftandilmmd\WorkflowAutomation\Attributes\AsWorkflowNode;
+use Aftandilmmd\WorkflowAutomation\Builders\Actions\SendMailNode;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeInput;
 use Aftandilmmd\WorkflowAutomation\DTOs\NodeOutput;
 use Aftandilmmd\WorkflowAutomation\Enums\MailSendMode;
@@ -10,7 +11,7 @@ use Aftandilmmd\WorkflowAutomation\Enums\NodeType;
 use Aftandilmmd\WorkflowAutomation\Nodes\BaseNode;
 use Illuminate\Support\Facades\Mail;
 
-#[AsWorkflowNode(key: 'send_mail', type: NodeType::Action, label: 'Send Mail')]
+#[AsWorkflowNode(key: 'send_mail', type: NodeType::Action, label: 'Send Mail', builder: SendMailNode::class)]
 class SendMailAction extends BaseNode
 {
     public static function configSchema(): array
